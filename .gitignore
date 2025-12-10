@@ -1,0 +1,6 @@
+.cache/
+build/
+deps/
+dist/
+node_modules/
+compile_commands.json
