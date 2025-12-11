@@ -3,7 +3,9 @@
 		{
 			"target_name": "ffmpeg",
 			"sources": [
-				"src/main.c"
+				"src/main.c",
+				"src/avcodec/CodecContext.c",
+				"src/avcodec/codec.c"
 			],
 			"include_dirs": [
 				"deps/ffmpeg/include"

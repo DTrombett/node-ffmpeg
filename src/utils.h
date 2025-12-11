@@ -1,4 +1,5 @@
-#define NAPI_VERSION 10
+#ifndef UTILS_H
+#define UTILS_H
 #define NODE_API_CALL(call)                                                    \
   do {                                                                         \
     napi_status status = (call);                                               \
@@ -25,13 +26,38 @@
     NODE_API_CALL(                                                             \
         napi_get_cb_info(env, (cbinfo), &argc, arguments, NULL, NULL));        \
   }
-#define NODE_STRING(str) String(env, (str))
-#define NODE_NUMBER(value) Number(env, (value))
-#define NODE_FUNCTION(name) Function(env, #name, (name))
+#define _GET_MACRO2(_1, _2, NAME, ...) NAME
+#define _GET_MACRO3(_1, _2, _3, NAME, ...) NAME
+#define STRING(str) String(env, (str))
+#define NUMBER(value) Number(env, (value))
+#define BIGINT64(value) BigInt64(env, (value))
+#define BIGUINT64(value) BigUInt64(env, (value))
+#define BIGINTWORDS(value) BigIntWords(env, (value))
+#define FUNCTION(name) Function(env, #name, (name))
 #define FREEZE(object) NODE_API_CALL(napi_object_freeze(env, (object)))
-#define _GET_MACRO(_1, _2, NAME, ...) NAME
 #define Array(...)                                                             \
-  _GET_MACRO(__VA_ARGS__, createArrayWithLength, createArray)(__VA_ARGS__)
+  _GET_MACRO2(__VA_ARGS__, createArrayWithLength, createArray)(__VA_ARGS__)
+#define DECLARE_PROP_ATTR(name, value, attributes)                             \
+  {name, NULL, NULL, NULL, NULL, value, attributes, NULL}
+#define DECLARE_PROP_NOATTR(name, value)                                       \
+  {name, NULL, NULL, NULL, NULL, value, napi_default_jsproperty, NULL}
+#define DECLARE_PROPERTY(...)                                                  \
+  _GET_MACRO3(__VA_ARGS__, DECLARE_PROP_ATTR, DECLARE_PROP_NOATTR)(__VA_ARGS__)
+#define PROP_CONST(name, value) DECLARE_PROP_ATTR(#name, value, napi_enumerable)
+#define WRAP(name, type, finalize_cb, ...)                                     \
+  static inline napi_value name(napi_env env, type native) {                   \
+    if (!native)                                                               \
+      return NULL;                                                             \
+    napi_value object = Object(env);                                           \
+    napi_property_descriptor properties[] = {__VA_ARGS__};                     \
+    NODE_API_CALL(napi_define_properties(                                      \
+        env, object, sizeof(properties) / sizeof(properties[0]), properties)); \
+    NODE_API_CALL(                                                             \
+        napi_wrap(env, object, (void *)native, finalize_cb, NULL, NULL));      \
+    FREEZE(object);                                                            \
+    return object;                                                             \
+  }
+
 #include <node_api.h>
 #include <stdlib.h>
 
@@ -47,6 +73,26 @@ static inline napi_value Number(napi_env env, double value) {
   napi_value result;
 
   NODE_API_CALL(napi_create_double(env, value, &result));
+  return result;
+}
+static inline napi_value BigInt64(napi_env env, int64_t value) {
+  napi_value result;
+
+  NODE_API_CALL(napi_create_bigint_int64(env, value, &result));
+  return result;
+}
+static inline napi_value BigUInt64(napi_env env, uint64_t value) {
+  napi_value result;
+
+  NODE_API_CALL(napi_create_bigint_uint64(env, value, &result));
+  return result;
+}
+static inline napi_value BigIntWords(napi_env env, int sign_bit,
+                                     size_t word_count, const uint64_t *words) {
+  napi_value result;
+
+  NODE_API_CALL(
+      napi_create_bigint_words(env, sign_bit, word_count, words, &result));
   return result;
 }
 static inline napi_value Object(napi_env env) {
@@ -83,3 +129,10 @@ static inline char *toChar(napi_env env, napi_value value) {
   NODE_API_CALL(napi_get_value_string_utf8(env, value, name, length + 1, NULL));
   return name;
 }
+static inline void *unwrap(napi_env env, napi_value object) {
+  void *result;
+
+  NODE_API_CALL(napi_unwrap(env, object, &result));
+  return result;
+}
+#endif

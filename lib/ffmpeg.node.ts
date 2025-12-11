@@ -9,11 +9,11 @@ enum AVMediaType {
 }
 
 declare module "ffmpeg.node" {
-	export type AVProfile = {
+	export type AVProfile = Readonly<{
 		profile: number;
 		name: string;
-	};
-	export type AVCodec = {
+	}>;
+	export type AVCodec = Readonly<{
 		name: string;
 		longName: string;
 		type: AVMediaType;
@@ -22,7 +22,7 @@ declare module "ffmpeg.node" {
 		maxLowres: number;
 		wrapperName?: string;
 		profiles?: AVProfile[];
-	};
+	}>;
 	export function versionInfo(): string;
 	export function findEncoderByName(name: string): AVCodec | undefined;
 }
