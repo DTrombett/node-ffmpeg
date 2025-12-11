@@ -48,16 +48,19 @@
   static inline napi_value name(napi_env env, type *native) {                  \
     if (!native)                                                               \
       return NULL;                                                             \
-    napi_value object = mapGet(native);                                        \
-    if (object)                                                                \
+    napi_ref ref = mapGet(native);                                             \
+    napi_value object;                                                         \
+    if (ref) {                                                                 \
+      NODE_API_CALL(napi_get_reference_value(env, ref, &object));              \
       return object;                                                           \
+    }                                                                          \
     object = Object(env);                                                      \
     napi_property_descriptor properties[] = {__VA_ARGS__};                     \
     NODE_API_CALL(napi_define_properties(                                      \
         env, object, sizeof(properties) / sizeof(properties[0]), properties)); \
     NODE_API_CALL(napi_wrap(env, object, (void *)native, mapFinalizeCb,        \
-                            finalize_cb, NULL));                               \
-    mapAdd(native, object);                                                    \
+                            finalize_cb, &ref));                               \
+    mapAdd(native, ref);                                                       \
     FREEZE(object);                                                            \
     return object;                                                             \
   }

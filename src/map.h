@@ -5,38 +5,38 @@
 
 typedef struct PtrMapEntry {
   const void *key;
-  napi_value value;
+  napi_ref value;
   UT_hash_handle hh;
 } PtrMapEntry;
 
-extern PtrMapEntry *valuesMap;
+extern PtrMapEntry *refMap;
 
-inline void mapAdd(const void *key, napi_value value) {
+inline void mapAdd(const void *key, napi_ref value) {
   PtrMapEntry *entry = malloc(sizeof(PtrMapEntry));
   entry->key = key;
   entry->value = value;
-  HASH_ADD_PTR(valuesMap, key, entry);
+  HASH_ADD_PTR(refMap, key, entry);
 }
 
-inline napi_value mapGet(const void *key) {
+inline napi_ref mapGet(const void *key) {
   PtrMapEntry *entry = NULL;
-  HASH_FIND_PTR(valuesMap, &key, entry);
+  HASH_FIND_PTR(refMap, &key, entry);
   return entry ? entry->value : NULL;
 }
 
 inline void mapDelete(const void *key) {
   PtrMapEntry *entry = NULL;
-  HASH_FIND_PTR(valuesMap, &key, entry);
+  HASH_FIND_PTR(refMap, &key, entry);
   if (entry) {
-    HASH_DEL(valuesMap, entry);
+    HASH_DEL(refMap, entry);
     free(entry);
   }
 }
 
 inline void mapClear() {
   PtrMapEntry *current, *tmp;
-  HASH_ITER(hh, valuesMap, current, tmp) {
-    HASH_DEL(valuesMap, current);
+  HASH_ITER(hh, refMap, current, tmp) {
+    HASH_DEL(refMap, current);
     free(current);
   }
 }
