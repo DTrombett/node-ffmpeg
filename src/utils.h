@@ -45,15 +45,19 @@
   _GET_MACRO3(__VA_ARGS__, DECLARE_PROP_ATTR, DECLARE_PROP_NOATTR)(__VA_ARGS__)
 #define PROP_CONST(name, value) DECLARE_PROP_ATTR(#name, value, napi_enumerable)
 #define WRAP(name, type, finalize_cb, ...)                                     \
-  static inline napi_value name(napi_env env, type native) {                   \
+  static inline napi_value name(napi_env env, type *native) {                  \
     if (!native)                                                               \
       return NULL;                                                             \
-    napi_value object = Object(env);                                           \
+    napi_value object = mapGet(native);                                        \
+    if (object)                                                                \
+      return object;                                                           \
+    object = Object(env);                                                      \
     napi_property_descriptor properties[] = {__VA_ARGS__};                     \
     NODE_API_CALL(napi_define_properties(                                      \
         env, object, sizeof(properties) / sizeof(properties[0]), properties)); \
-    NODE_API_CALL(                                                             \
-        napi_wrap(env, object, (void *)native, finalize_cb, NULL, NULL));      \
+    NODE_API_CALL(napi_wrap(env, object, (void *)native, mapFinalizeCb,        \
+                            finalize_cb, NULL));                               \
+    mapAdd(native, object);                                                    \
     FREEZE(object);                                                            \
     return object;                                                             \
   }

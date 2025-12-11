@@ -1,11 +1,12 @@
 #ifndef CODEC_H
 #define CODEC_H
+#include "../map.h"
 #include "../utils.h"
 #include <libavcodec/codec.h>
 #include <libavcodec/defs.h>
 #include <node_api.h>
 
-WRAP(createAVProfile, const AVProfile *, NULL,
+WRAP(createAVProfile, const AVProfile, NULL,
      PROP_CONST(profile, NUMBER(native->profile)),
      PROP_CONST(name, STRING(native->name)))
 
@@ -22,7 +23,7 @@ static inline napi_value createProfiles(napi_env env,
   return array;
 }
 
-WRAP(createAVCodec, AVCodec *, NULL, PROP_CONST(name, STRING(native->name)),
+WRAP(createAVCodec, AVCodec, NULL, PROP_CONST(name, STRING(native->name)),
      PROP_CONST(longName, STRING(native->long_name)),
      PROP_CONST(type, NUMBER(native->type)), PROP_CONST(id, NUMBER(native->id)),
      PROP_CONST(capabilities, NUMBER(native->capabilities)),

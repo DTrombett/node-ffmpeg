@@ -1,5 +1,6 @@
 #ifndef CODEC_CONTEXT_H
 #define CODEC_CONTEXT_H
+#include "../map.h"
 #include "../utils.h"
 #include <libavcodec/avcodec.h>
 #include <node_api.h>
@@ -9,7 +10,7 @@ static void freeContext(napi_env env, void *finalize_data,
   avcodec_free_context((AVCodecContext **)&finalize_data);
 }
 
-WRAP(createAVCodecContext, AVCodecContext *, freeContext,
+WRAP(createAVCodecContext, AVCodecContext, freeContext,
      PROP_CONST(codecType, NUMBER(native->codec_type)), PROP_CONST(codec, NULL),
      PROP_CONST(codecId, NUMBER(native->codec_id)),
      PROP_CONST(codecTag, NUMBER(native->codec_tag)),
