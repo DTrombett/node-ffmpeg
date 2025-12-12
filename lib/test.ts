@@ -10,11 +10,16 @@ const context = ffmpeg.allocContext3(encoder);
 console.timeEnd();
 console.log(
 	"Context before setting properties:",
-	context.width,
-	context.height,
+	context.timeBase,
+	context.timeBase.num,
+	context.timeBase.den,
 );
 console.time();
-context.width = 1920;
-context.height = 1080;
+context.timeBase = { num: 1, den: 30 };
 console.timeEnd();
-console.log("Context after setting properties:", typeof context.privData);
+console.log(
+	"Context after setting properties:",
+	context.timeBase,
+	context.timeBase.num,
+	context.timeBase.den,
+);

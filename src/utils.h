@@ -65,6 +65,7 @@
    (void *)offsetof(Wrap, prop)}
 #define WRAP(name, type, finalize_cb, ...)                                     \
   static inline napi_value name(napi_env env, type *native) {                  \
+    typedef type Wrap;                                                         \
     if (!native)                                                               \
       return NULL;                                                             \
     napi_ref ref = mapGet(native);                                             \
@@ -98,12 +99,11 @@
   void *data;                                                                  \
   napi_value thisArg;                                                          \
   NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &thisArg, &data));   \
-  if (!data)                                                                   \
-    return NULL;                                                               \
   char *native = unwrap(env, thisArg);                                         \
   if (!native)                                                                 \
     return NULL;
 
+#include "map.h"
 #include <node_api.h>
 #include <stdlib.h>
 

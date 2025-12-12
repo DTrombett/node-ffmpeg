@@ -1,6 +1,6 @@
 #ifndef CODEC_CONTEXT_H
 #define CODEC_CONTEXT_H
-#include "../map.h"
+#include "../avutil/rational.h"
 #include "../utils.h"
 #include "codec.h"
 #include <libavcodec/avcodec.h>
@@ -12,8 +12,6 @@ static void freeContext(napi_env env, void *finalize_data,
   avcodec_free_context((AVCodecContext **)&finalize_data);
 }
 
-typedef AVCodecContext Wrap;
-
 WRAP(createAVCodecContext, AVCodecContext, freeContext,
      PROP_CONST(codecType, NUMBER(native->codec_type)),
      PROP_CONST(codec, createAVCodec(env, native->codec)),
@@ -21,14 +19,15 @@ WRAP(createAVCodecContext, AVCodecContext, freeContext,
      PROP_GETSET(codecTag, codec_tag, int),
      PROP_CONST(privData, EXTERNAL(native->priv_data)),
      PROP_GETSET(bitRate, bit_rate, int64_t), PROP_GETSET(flags, flags, int),
-     PROP_GETSET(flags2, flags2, int), PROP_CONST(timeBase, NULL),
-     PROP_CONST(pktTimebase, NULL), PROP_CONST(framerate, NULL),
-     PROP_GET(delay, delay, int), PROP_GETSET(width, width, int),
-     PROP_GETSET(height, height, int),
+     PROP_GETSET(flags2, flags2, int),
+     PROP_GETSET(timeBase, time_base, AVRational),
+     PROP_GETSET(pktTimebase, pkt_timebase, AVRational),
+     PROP_GETSET(framerate, framerate, AVRational), PROP_GET(delay, delay, int),
+     PROP_GETSET(width, width, int), PROP_GETSET(height, height, int),
      PROP_GETSET(codedWidth, coded_width, int),
      PROP_GETSET(codedHeight, coded_height, int),
-     PROP_CONST(sampleAspectRatio, NULL), PROP_GETSET(pixFmt, pix_fmt, int),
-     PROP_GET(swPixFmt, sw_pix_fmt, int),
+     PROP_GETSET(sampleAspectRatio, sample_aspect_ratio, AVRational),
+     PROP_GETSET(pixFmt, pix_fmt, int), PROP_GET(swPixFmt, sw_pix_fmt, int),
      PROP_GETSET(colorPrimaries, color_primaries, int),
      PROP_GETSET(colorTrc, color_trc, int),
      PROP_GETSET(colorspace, colorspace, int),

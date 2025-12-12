@@ -1,6 +1,5 @@
 #ifndef CODEC_H
 #define CODEC_H
-#include "../map.h"
 #include "../utils.h"
 #include <libavcodec/codec.h>
 #include <libavcodec/defs.h>
