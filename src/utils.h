@@ -37,6 +37,7 @@
 #define FREEZE(object) NODE_API_CALL(napi_object_freeze(env, (object)))
 #define Array(...)                                                             \
   _GET_MACRO2(__VA_ARGS__, createArrayWithLength, createArray)(__VA_ARGS__)
+#define EXTERNAL(data) External(env, (data), NULL, NULL)
 #define DECLARE_PROP_ATTR(name, value, attributes)                             \
   {name, NULL, NULL, NULL, NULL, value, attributes, NULL}
 #define DECLARE_PROP_NOATTR(name, value)                                       \
@@ -44,6 +45,24 @@
 #define DECLARE_PROPERTY(...)                                                  \
   _GET_MACRO3(__VA_ARGS__, DECLARE_PROP_ATTR, DECLARE_PROP_NOATTR)(__VA_ARGS__)
 #define PROP_CONST(name, value) DECLARE_PROP_ATTR(#name, value, napi_enumerable)
+#define PROP_GETSET(name, prop, type)                                          \
+  {#name,                                                                      \
+   NULL,                                                                       \
+   NULL,                                                                       \
+   get_##type,                                                                 \
+   set_##type,                                                                 \
+   NULL,                                                                       \
+   napi_enumerable | napi_writable,                                            \
+   (void *)offsetof(Wrap, prop)}
+#define PROP_GET(name, prop, type)                                             \
+  {#name,                                                                      \
+   NULL,                                                                       \
+   NULL,                                                                       \
+   get_##type,                                                                 \
+   NULL,                                                                       \
+   NULL,                                                                       \
+   napi_enumerable,                                                            \
+   (void *)offsetof(Wrap, prop)}
 #define WRAP(name, type, finalize_cb, ...)                                     \
   static inline napi_value name(napi_env env, type *native) {                  \
     if (!native)                                                               \
@@ -64,6 +83,26 @@
     FREEZE(object);                                                            \
     return object;                                                             \
   }
+#define LOAD_SET(cbinfo)                                                       \
+  void *data;                                                                  \
+  napi_value thisArg;                                                          \
+  napi_value argv[1];                                                          \
+  size_t argc = 1;                                                             \
+  NODE_API_CALL(napi_get_cb_info(env, cbinfo, &argc, argv, &thisArg, &data));  \
+  if (!data || argv[0] == NULL)                                                \
+    return NULL;                                                               \
+  char *native = unwrap(env, thisArg);                                         \
+  if (!native)                                                                 \
+    return NULL;
+#define LOAD_GET(cbinfo)                                                       \
+  void *data;                                                                  \
+  napi_value thisArg;                                                          \
+  NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &thisArg, &data));   \
+  if (!data)                                                                   \
+    return NULL;                                                               \
+  char *native = unwrap(env, thisArg);                                         \
+  if (!native)                                                                 \
+    return NULL;
 
 #include <node_api.h>
 #include <stdlib.h>
@@ -132,6 +171,8 @@ static inline char *toChar(napi_env env, napi_value value) {
   size_t length;
 
   NODE_API_CALL(napi_get_value_string_utf8(env, value, NULL, 0, &length));
+  if (!length)
+    return NULL;
   char *name = malloc(length + 1);
   NODE_API_CALL(napi_get_value_string_utf8(env, value, name, length + 1, NULL));
   return name;
@@ -142,4 +183,24 @@ static inline void *unwrap(napi_env env, napi_value object) {
   NODE_API_CALL(napi_unwrap(env, object, &result));
   return result;
 }
+static inline napi_value External(napi_env env, void *data,
+                                  napi_finalize finalize_cb,
+                                  void *finalize_hint) {
+  napi_value result;
+
+  NODE_API_CALL(
+      napi_create_external(env, data, finalize_cb, finalize_hint, &result));
+  return result;
+}
+
+napi_value get_int(napi_env env, napi_callback_info cbinfo);
+napi_value set_int(napi_env env, napi_callback_info cbinfo);
+napi_value get_int64_t(napi_env env, napi_callback_info cbinfo);
+napi_value set_int64_t(napi_env env, napi_callback_info cbinfo);
+napi_value get_float(napi_env env, napi_callback_info cbinfo);
+napi_value set_float(napi_env env, napi_callback_info cbinfo);
+napi_value get_double(napi_env env, napi_callback_info cbinfo);
+napi_value set_double(napi_env env, napi_callback_info cbinfo);
+napi_value get_string(napi_env env, napi_callback_info cbinfo);
+napi_value set_string(napi_env env, napi_callback_info cbinfo);
 #endif

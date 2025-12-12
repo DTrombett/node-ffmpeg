@@ -23,7 +23,7 @@ static inline napi_value createProfiles(napi_env env,
   return array;
 }
 
-WRAP(createAVCodec, AVCodec, NULL, PROP_CONST(name, STRING(native->name)),
+WRAP(createAVCodec, const AVCodec, NULL, PROP_CONST(name, STRING(native->name)),
      PROP_CONST(longName, STRING(native->long_name)),
      PROP_CONST(type, NUMBER(native->type)), PROP_CONST(id, NUMBER(native->id)),
      PROP_CONST(capabilities, NUMBER(native->capabilities)),

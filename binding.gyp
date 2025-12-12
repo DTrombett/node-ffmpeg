@@ -4,7 +4,8 @@
 			"target_name": "ffmpeg",
 			"sources": [
 				"src/main.c",
-				"src/map.c"
+				"src/map.c",
+				"src/utils.c"
 			],
 			"include_dirs": [
 				"deps/ffmpeg/include"
