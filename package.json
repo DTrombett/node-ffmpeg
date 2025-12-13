@@ -18,7 +18,7 @@
 	"scripts": {
 		"prepare": "node-gyp configure -- -f compile_commands_json",
 		"install": "node-gyp rebuild",
-		"build": "node esbuild.mts && node-gyp configure && node-gyp build"
+		"build": "node esbuild.mts && node-gyp configure && node-gyp build && copy /Y \".\\deps\\ffmpeg\\bin\\*.dll\" \".\\dist\\\" && copy /Y \".\\build\\Release\\*.node\" \".\\dist\\\""
 	},
 	"devDependencies": {
 		"@tsconfig/node-lts": "^24.0.0",

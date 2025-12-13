@@ -1,25 +1,18 @@
 import ffmpeg from "ffmpeg.node";
 
 console.log("ffmpeg version:", ffmpeg.versionInfo());
-console.time();
-const encoder = ffmpeg.findEncoderByName("libvpx-vp9");
-console.timeEnd();
-console.log("vp9 codec:", encoder);
-console.time();
-const context = ffmpeg.allocContext3(encoder);
-console.timeEnd();
-console.log(
-	"Context before setting properties:",
-	context.timeBase,
-	context.timeBase.num,
-	context.timeBase.den,
-);
-console.time();
-context.timeBase = { num: 1, den: 30 };
-console.timeEnd();
-console.log(
-	"Context after setting properties:",
-	context.timeBase,
-	context.timeBase.num,
-	context.timeBase.den,
-);
+const codec = ffmpeg.findEncoderByName("libx264");
+console.log("Codec:", codec);
+const context = ffmpeg.allocContext3(codec);
+console.log("Context:", context);
+const packet = ffmpeg.packetAlloc();
+console.log("Packet:", packet);
+context.width = 1280;
+context.height = 720;
+context.timeBase = { num: 1, den: 24 };
+context.framerate = { num: 24, den: 1 };
+context.gopSize = 240;
+context.maxBFrames = 0;
+context.pixFmt = 0;
+context.profile = 144;
+console.log("Context after setting properties:", context);
