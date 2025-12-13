@@ -31,11 +31,28 @@ static napi_value allocContext3(napi_env env, napi_callback_info cbinfo) {
 static napi_value packetAlloc(napi_env env, napi_callback_info cbinfo) {
   return createAVPacket(env, av_packet_alloc());
 }
+static napi_value optSet(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(4, cbinfo);
+  void *obj;
+  NODE_API_CALL(nodeTypeof(env, arguments[0]) == napi_external
+                    ? napi_get_value_external(env, arguments[0], &obj)
+                    : napi_unwrap(env, arguments[0], &obj));
+  char *name = toChar(env, arguments[1]);
+  char *val = toChar(env, arguments[2]);
+  int search_flags;
+
+  NODE_API_CALL(napi_get_value_int32(env, arguments[3], &search_flags));
+  int ret = av_opt_set(obj, name, val, search_flags);
+  free(name);
+  free(val);
+  return NUMBER(ret);
+}
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   NODE_SET_PROPERTY(exports, "versionInfo", FUNCTION(versionInfo));
   NODE_SET_PROPERTY(exports, "findEncoderByName", FUNCTION(findEncoderByName));
   NODE_SET_PROPERTY(exports, "allocContext3", FUNCTION(allocContext3));
   NODE_SET_PROPERTY(exports, "packetAlloc", FUNCTION(packetAlloc));
+  NODE_SET_PROPERTY(exports, "optSet", FUNCTION(optSet));
   return exports;
 }

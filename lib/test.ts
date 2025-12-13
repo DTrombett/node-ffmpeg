@@ -15,4 +15,18 @@ context.gopSize = 240;
 context.maxBFrames = 0;
 context.pixFmt = 0;
 context.profile = 144;
-console.log("Context after setting properties:", context);
+let ret = ffmpeg.optSet(context.privData, "preset", "veryslow", 0);
+ret ||= ffmpeg.optSet(context.privData, "qp", "0", 0);
+ret ||= ffmpeg.optSet(context.privData, "weightp", "2", 0);
+if (!ret) console.log("Context after setting properties:", context);
+else
+	console.error(
+		"Error setting context properties:",
+		String.fromCharCode(
+			-ret & 0xff,
+			(-ret >> 8) & 0xff,
+			(-ret >> 16) & 0xff,
+			(-ret >> 24) & 0xff,
+		),
+	);
+// 1765645200

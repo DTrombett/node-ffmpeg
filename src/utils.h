@@ -1,6 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
-#define NODE_API_CALL(call)                                                    \
+#define NODE_API_CALL_DEFAULT(call, def)                                       \
   do {                                                                         \
     napi_status status = (call);                                               \
     if (status != napi_ok) {                                                   \
@@ -9,14 +9,16 @@
       const char *err_message = error_info->error_message;                     \
       bool is_pending;                                                         \
       napi_is_exception_pending(env, &is_pending);                             \
-      if (!is_pending) {                                                       \
-        const char *message =                                                  \
-            (err_message == NULL) ? "empty error message" : err_message;       \
+      const char *message =                                                    \
+          (err_message == NULL) ? "empty error message" : err_message;         \
+      printf("%s\n^\nError: %s at %s (%s:%d)\n", #call, message, __func__,     \
+             __FILE__, __LINE__);                                              \
+      if (!is_pending)                                                         \
         napi_throw_error(env, NULL, message);                                  \
-      }                                                                        \
-      return NULL;                                                             \
+      return (def);                                                            \
     }                                                                          \
   } while (0)
+#define NODE_API_CALL(call) NODE_API_CALL_DEFAULT(call, NULL)
 #define NODE_SET_PROPERTY(object, name, value)                                 \
   NODE_API_CALL(napi_set_named_property(env, (object), (name), (value)))
 #define NODE_LOAD_ARGUMENTS(count, cbinfo)                                     \
@@ -105,8 +107,15 @@
 
 #include "map.h"
 #include <node_api.h>
+#include <stdio.h>
 #include <stdlib.h>
 
+static inline napi_valuetype nodeTypeof(napi_env env, napi_value value) {
+  napi_valuetype result;
+
+  NODE_API_CALL_DEFAULT(napi_typeof(env, value, &result), napi_undefined);
+  return result;
+};
 static inline napi_value String(napi_env env, const char *str) {
   if (!str)
     return NULL;
