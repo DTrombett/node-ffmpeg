@@ -5,6 +5,7 @@ const codec = ffmpeg.findEncoderByName("libx264");
 console.log("Codec:", codec);
 const context = ffmpeg.allocContext3(codec);
 console.log("Context:", context);
+console.log(codec === context.codec);
 const packet = ffmpeg.packetAlloc();
 console.log("Packet:", packet);
 context.width = 1280;
@@ -17,6 +18,7 @@ context.pixFmt = 0;
 context.profile = 144;
 let ret = ffmpeg.optSet(context.privData, "preset", "veryslow");
 ret ||= ffmpeg.optSet(context.privData, "qp", "0");
+ret ||= ffmpeg.optSet(context.privData, "x264-params", "scenecut=0");
 ret ||= ffmpeg.optSet(context.privData, "weightp", "2");
 if (!ret) console.log("Context after setting properties:", context);
 else

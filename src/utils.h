@@ -19,7 +19,7 @@
       if (!is_pending)                                                         \
         napi_throw_error(env, NULL, message);                                  \
       free(buf);                                                               \
-      return (def);                                                            \
+      return def;                                                              \
     }                                                                          \
   } while (0)
 #define NODE_API_CALL(call) NODE_API_CALL_DEFAULT(call, NULL)
@@ -108,6 +108,12 @@
   char *native = unwrap(env, thisArg);                                         \
   if (!native)                                                                 \
     return NULL;
+#define OPT_SET(func, ...)                                                     \
+  char *name = parseString(env, arguments[1]);                                 \
+  int ret =                                                                    \
+      av_opt_set##func(parseExternal(env, arguments[0]), name, __VA_ARGS__,    \
+                       parseInt(env, arguments[3], true, 0));                  \
+  free(name);
 
 #include "map.h"
 #include <node_api.h>
@@ -192,19 +198,44 @@ static inline char *parseString(napi_env env, napi_value value) {
   NODE_API_CALL(napi_get_value_string_utf8(env, value, name, length + 1, NULL));
   return name;
 }
-static inline int parseInt(napi_env env, napi_value value, int defaultValue) {
+static inline int parseInt(napi_env env, napi_value value, bool ignoreNaN,
+                           int defaultValue) {
   int result;
 
-  if (nodeTypeof(env, value) != napi_number)
+  if (ignoreNaN && nodeTypeof(env, value) != napi_number)
     return defaultValue;
   NODE_API_CALL_DEFAULT(napi_get_value_int32(env, value, &result),
                         defaultValue);
   return result;
 }
+static inline int64_t parseInt64(napi_env env, napi_value value, bool ignoreNaN,
+                                 int64_t defaultValue) {
+  int64_t result;
+
+  if (ignoreNaN && nodeTypeof(env, value) != napi_number)
+    return defaultValue;
+  NODE_API_CALL_DEFAULT(napi_get_value_int64(env, value, &result),
+                        defaultValue);
+  return result;
+}
+static inline double parseDouble(napi_env env, napi_value value, bool ignoreNaN,
+                                 double defaultValue) {
+  double result;
+
+  if (ignoreNaN && nodeTypeof(env, value) != napi_number)
+    return defaultValue;
+  NODE_API_CALL_DEFAULT(napi_get_value_double(env, value, &result),
+                        defaultValue);
+  return result;
+}
 static inline void *unwrap(napi_env env, napi_value object) {
   void *result;
+  napi_status status = napi_unwrap(env, object, &result);
 
-  NODE_API_CALL(napi_unwrap(env, object, &result));
+  if (status != napi_ok) {
+    napi_get_and_clear_last_exception(env, result);
+    return NULL;
+  }
   return result;
 }
 static inline napi_value External(napi_env env, void *data,
@@ -214,6 +245,23 @@ static inline napi_value External(napi_env env, void *data,
 
   NODE_API_CALL(
       napi_create_external(env, data, finalize_cb, finalize_hint, &result));
+  return result;
+}
+static inline void *parseExternal(napi_env env, napi_value value) {
+  void *result;
+
+  if (!value)
+    return NULL;
+  if (nodeTypeof(env, value) == napi_external)
+    NODE_API_CALL(napi_get_value_external(env, value, &result));
+  else {
+    napi_status status = napi_unwrap(env, value, &result);
+
+    if (status != napi_ok) {
+      napi_get_and_clear_last_exception(env, result);
+      return NULL;
+    }
+  }
   return result;
 }
 

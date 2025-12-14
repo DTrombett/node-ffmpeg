@@ -33,16 +33,28 @@ static napi_value packetAlloc(napi_env env, napi_callback_info cbinfo) {
 }
 static napi_value optSet(napi_env env, napi_callback_info cbinfo) {
   NODE_LOAD_ARGUMENTS(4, cbinfo);
-  void *obj;
-  NODE_API_CALL(nodeTypeof(env, arguments[0]) == napi_external
-                    ? napi_get_value_external(env, arguments[0], &obj)
-                    : napi_unwrap(env, arguments[0], &obj));
-  char *name = parseString(env, arguments[1]);
   char *val = parseString(env, arguments[2]);
-  int ret = av_opt_set(obj, name, val, parseInt(env, arguments[3], 0));
 
-  free(name);
+  OPT_SET(, val)
   free(val);
+  return NUMBER(ret);
+}
+static napi_value optSetInt(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(4, cbinfo);
+  OPT_SET(_int, parseInt64(env, arguments[2], false, 0))
+  return NUMBER(ret);
+}
+static napi_value optSetDouble(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(4, cbinfo);
+  OPT_SET(_double, parseDouble(env, arguments[2], false, 0))
+  return NUMBER(ret);
+}
+static napi_value optSetQ(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(4, cbinfo);
+  AVRational val;
+
+  parseAVRational(env, arguments[2], &val);
+  OPT_SET(_q, val)
   return NUMBER(ret);
 }
 
@@ -52,5 +64,8 @@ NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   NODE_SET_PROPERTY(exports, "allocContext3", FUNCTION(allocContext3));
   NODE_SET_PROPERTY(exports, "packetAlloc", FUNCTION(packetAlloc));
   NODE_SET_PROPERTY(exports, "optSet", FUNCTION(optSet));
+  NODE_SET_PROPERTY(exports, "optSetInt", FUNCTION(optSetInt));
+  NODE_SET_PROPERTY(exports, "optSetDouble", FUNCTION(optSetDouble));
+  NODE_SET_PROPERTY(exports, "optSetQ", FUNCTION(optSetQ));
   return exports;
 }
