@@ -20,8 +20,7 @@ let ret = ffmpeg.optSet(context.privData, "preset", "veryslow");
 ret ||= ffmpeg.optSet(context.privData, "qp", "0");
 ret ||= ffmpeg.optSet(context.privData, "x264-params", "scenecut=0");
 ret ||= ffmpeg.optSet(context.privData, "weightp", "2");
-if (!ret) console.log("Context after setting properties:", context);
-else
+if (ret)
 	console.error(
 		"Error setting context properties:",
 		String.fromCharCode(
@@ -31,4 +30,5 @@ else
 			(-ret >> 24) & 0xff,
 		),
 	);
+console.log(ffmpeg.open2(context, codec));
 // 1765645200

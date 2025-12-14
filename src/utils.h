@@ -9,16 +9,18 @@
       const char *err_message = error_info->error_message;                     \
       bool is_pending;                                                         \
       napi_is_exception_pending(env, &is_pending);                             \
-      const char *message = err_message ? err_message : "empty error message"; \
-      int len = snprintf(NULL, 0, "%s\n    at %s (%s:%d)", message, __func__,  \
-                         __FILE__, __LINE__);                                  \
-      char *buf = malloc(len + 1);                                             \
-      snprintf(buf, len + 1, "%s\n    at %s (%s:%d)", message, __func__,       \
-               __FILE__, __LINE__);                                            \
-      message = buf;                                                           \
-      if (!is_pending)                                                         \
+      if (!is_pending) {                                                       \
+        const char *message =                                                  \
+            err_message ? err_message : "empty error message";                 \
+        int len = snprintf(NULL, 0, "%s\n    at %s (%s:%d)", message,          \
+                           __func__, __FILE__, __LINE__);                      \
+        char *buf = malloc(len + 1);                                           \
+        snprintf(buf, len + 1, "%s\n    at %s (%s:%d)", message, __func__,     \
+                 __FILE__, __LINE__);                                          \
+        message = buf;                                                         \
         napi_throw_error(env, NULL, message);                                  \
-      free(buf);                                                               \
+        free(buf);                                                             \
+      }                                                                        \
       return def;                                                              \
     }                                                                          \
   } while (0)
@@ -248,13 +250,14 @@ static inline napi_value External(napi_env env, void *data,
   return result;
 }
 static inline void *parseExternal(napi_env env, napi_value value) {
-  void *result;
-
   if (!value)
     return NULL;
-  if (nodeTypeof(env, value) == napi_external)
+  void *result = NULL;
+  napi_valuetype type = nodeTypeof(env, value);
+
+  if (type == napi_external)
     NODE_API_CALL(napi_get_value_external(env, value, &result));
-  else {
+  else if (type == napi_object) {
     napi_status status = napi_unwrap(env, value, &result);
 
     if (status != napi_ok) {

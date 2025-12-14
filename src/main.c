@@ -57,6 +57,12 @@ static napi_value optSetQ(napi_env env, napi_callback_info cbinfo) {
   OPT_SET(_q, val)
   return NUMBER(ret);
 }
+static napi_value open2(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(3, cbinfo);
+  return NUMBER(avcodec_open2(parseExternal(env, arguments[0]),
+                              parseExternal(env, arguments[1]),
+                              parseExternal(env, arguments[2])));
+}
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   NODE_SET_PROPERTY(exports, "versionInfo", FUNCTION(versionInfo));
@@ -67,5 +73,6 @@ NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   NODE_SET_PROPERTY(exports, "optSetInt", FUNCTION(optSetInt));
   NODE_SET_PROPERTY(exports, "optSetDouble", FUNCTION(optSetDouble));
   NODE_SET_PROPERTY(exports, "optSetQ", FUNCTION(optSetQ));
+  NODE_SET_PROPERTY(exports, "open2", FUNCTION(open2));
   return exports;
 }
