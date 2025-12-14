@@ -58,6 +58,6 @@ napi_value set_string(napi_env env, napi_callback_info cbinfo) {
   char **pointer = (char **)(native + (uint64_t)data);
 
   free(*pointer);
-  *pointer = toChar(env, argv[0]);
+  *pointer = parseString(env, argv[0]);
   return NULL;
 }

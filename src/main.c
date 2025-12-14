@@ -16,7 +16,7 @@ static napi_value versionInfo(napi_env env, napi_callback_info cbinfo) {
 }
 static napi_value findEncoderByName(napi_env env, napi_callback_info cbinfo) {
   NODE_LOAD_ARGUMENTS(1, cbinfo);
-  char *name = toChar(env, arguments[0]);
+  char *name = parseString(env, arguments[0]);
   const AVCodec *codec = avcodec_find_encoder_by_name(name);
 
   free(name);
@@ -37,12 +37,10 @@ static napi_value optSet(napi_env env, napi_callback_info cbinfo) {
   NODE_API_CALL(nodeTypeof(env, arguments[0]) == napi_external
                     ? napi_get_value_external(env, arguments[0], &obj)
                     : napi_unwrap(env, arguments[0], &obj));
-  char *name = toChar(env, arguments[1]);
-  char *val = toChar(env, arguments[2]);
-  int search_flags;
+  char *name = parseString(env, arguments[1]);
+  char *val = parseString(env, arguments[2]);
+  int ret = av_opt_set(obj, name, val, parseInt(env, arguments[3], 0));
 
-  NODE_API_CALL(napi_get_value_int32(env, arguments[3], &search_flags));
-  int ret = av_opt_set(obj, name, val, search_flags);
   free(name);
   free(val);
   return NUMBER(ret);

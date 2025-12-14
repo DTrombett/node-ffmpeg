@@ -9,12 +9,16 @@
       const char *err_message = error_info->error_message;                     \
       bool is_pending;                                                         \
       napi_is_exception_pending(env, &is_pending);                             \
-      const char *message =                                                    \
-          (err_message == NULL) ? "empty error message" : err_message;         \
-      printf("%s\n^\nError: %s at %s (%s:%d)\n", #call, message, __func__,     \
-             __FILE__, __LINE__);                                              \
+      const char *message = err_message ? err_message : "empty error message"; \
+      int len = snprintf(NULL, 0, "%s\n    at %s (%s:%d)", message, __func__,  \
+                         __FILE__, __LINE__);                                  \
+      char *buf = malloc(len + 1);                                             \
+      snprintf(buf, len + 1, "%s\n    at %s (%s:%d)", message, __func__,       \
+               __FILE__, __LINE__);                                            \
+      message = buf;                                                           \
       if (!is_pending)                                                         \
         napi_throw_error(env, NULL, message);                                  \
+      free(buf);                                                               \
       return (def);                                                            \
     }                                                                          \
   } while (0)
@@ -176,15 +180,26 @@ static inline napi_value Function(napi_env env, const char *name,
       napi_create_function(env, name, NAPI_AUTO_LENGTH, cb, NULL, &result));
   return result;
 }
-static inline char *toChar(napi_env env, napi_value value) {
+static inline char *parseString(napi_env env, napi_value value) {
   size_t length;
 
+  if (nodeTypeof(env, value) != napi_string)
+    return NULL;
   NODE_API_CALL(napi_get_value_string_utf8(env, value, NULL, 0, &length));
   if (!length)
     return NULL;
   char *name = malloc(length + 1);
   NODE_API_CALL(napi_get_value_string_utf8(env, value, name, length + 1, NULL));
   return name;
+}
+static inline int parseInt(napi_env env, napi_value value, int defaultValue) {
+  int result;
+
+  if (nodeTypeof(env, value) != napi_number)
+    return defaultValue;
+  NODE_API_CALL_DEFAULT(napi_get_value_int32(env, value, &result),
+                        defaultValue);
+  return result;
 }
 static inline void *unwrap(napi_env env, napi_value object) {
   void *result;
