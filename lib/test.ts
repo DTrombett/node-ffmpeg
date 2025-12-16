@@ -1,4 +1,5 @@
 import ffmpeg from "ffmpeg.node";
+import { createWriteStream } from "fs";
 
 console.log("ffmpeg version:", ffmpeg.versionInfo());
 const codec = ffmpeg.findEncoderByName("libx264");
@@ -31,4 +32,10 @@ if (ret)
 		),
 	);
 console.log(ffmpeg.open2(context, codec));
+const file = createWriteStream("tmp/output.h264");
+const frame = ffmpeg.frameAlloc();
+console.log("Frame:", frame);
+frame.format = context.pixFmt;
+frame.width = context.width;
+frame.height = context.height;
 // 1765645200

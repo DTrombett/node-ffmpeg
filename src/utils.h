@@ -267,6 +267,14 @@ static inline void *parseExternal(napi_env env, napi_value value) {
   }
   return result;
 }
+static inline napi_value ArrayBuffer(napi_env env, size_t byte_length,
+                                     void *external_data) {
+  napi_value result;
+
+  NODE_API_CALL(napi_create_external_arraybuffer(
+      env, external_data, byte_length, NULL, NULL, &result));
+  return result;
+}
 
 napi_value get_int(napi_env env, napi_callback_info cbinfo);
 napi_value set_int(napi_env env, napi_callback_info cbinfo);
@@ -278,4 +286,7 @@ napi_value get_double(napi_env env, napi_callback_info cbinfo);
 napi_value set_double(napi_env env, napi_callback_info cbinfo);
 napi_value get_string(napi_env env, napi_callback_info cbinfo);
 napi_value set_string(napi_env env, napi_callback_info cbinfo);
+napi_value get_AVRational(napi_env env, napi_callback_info cbinfo);
+napi_value set_AVRational(napi_env env, napi_callback_info cbinfo);
+napi_value get_External(napi_env env, napi_callback_info cbinfo);
 #endif

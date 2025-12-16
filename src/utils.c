@@ -1,4 +1,5 @@
-#include "./utils.h"
+#include "utils.h"
+#include "avutil/rational.h"
 #include <node_api.h>
 
 napi_value get_int(napi_env env, napi_callback_info cbinfo) {
@@ -60,4 +61,19 @@ napi_value set_string(napi_env env, napi_callback_info cbinfo) {
   free(*pointer);
   *pointer = parseString(env, argv[0]);
   return NULL;
+}
+napi_value get_AVRational(napi_env env, napi_callback_info cbinfo) {
+  LOAD_GET(cbinfo)
+  return createAVRational(env, (AVRational *)(native + (uint64_t)data));
+}
+napi_value set_AVRational(napi_env env, napi_callback_info cbinfo) {
+  LOAD_SET(cbinfo)
+  parseAVRational(env, argv[0], (AVRational *)(native + (uint64_t)data));
+  return NULL;
+}
+napi_value get_External(napi_env env, napi_callback_info cbinfo) {
+  LOAD_GET(cbinfo)
+  void *value = *(void **)(native + (uint64_t)data);
+
+  return External(env, value, NULL, NULL);
 }

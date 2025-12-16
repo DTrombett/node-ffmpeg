@@ -1,6 +1,7 @@
 #define NAPI_VERSION 10
 #include "avcodec/CodecContext.h"
 #include "avcodec/codec.h"
+#include "avcodec/frame.h"
 #include "avcodec/packet.h"
 #include "utils.h"
 #include <libavcodec/avcodec.h>
@@ -63,6 +64,9 @@ static napi_value open2(napi_env env, napi_callback_info cbinfo) {
                               parseExternal(env, arguments[1]),
                               parseExternal(env, arguments[2])));
 }
+static napi_value frameAlloc(napi_env env, napi_callback_info cbinfo) {
+  return createAVFrame(env, av_frame_alloc());
+}
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   NODE_SET_PROPERTY(exports, "versionInfo", FUNCTION(versionInfo));
@@ -74,5 +78,6 @@ NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   NODE_SET_PROPERTY(exports, "optSetDouble", FUNCTION(optSetDouble));
   NODE_SET_PROPERTY(exports, "optSetQ", FUNCTION(optSetQ));
   NODE_SET_PROPERTY(exports, "open2", FUNCTION(open2));
+  NODE_SET_PROPERTY(exports, "frameAlloc", FUNCTION(frameAlloc));
   return exports;
 }
