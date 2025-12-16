@@ -1,6 +1,5 @@
 #ifndef PACKET_H
 #define PACKET_H
-#include "../avutil/rational.h"
 #include "../utils.h"
 #include <libavcodec/defs.h>
 #include <libavcodec/packet.h>

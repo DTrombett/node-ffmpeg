@@ -3,77 +3,61 @@
 #include <node_api.h>
 
 napi_value get_int(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  return NUMBER(*(int *)(native + (uint64_t)data));
+  LOAD_GET(cbinfo, int)
+  return NUMBER(*data);
 }
 napi_value set_int(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo)
-  int value;
-
-  NODE_API_CALL(napi_get_value_int32(env, argv[0], &value));
-  *(int *)(native + (uint64_t)data) = value;
+  LOAD_SET(cbinfo, int)
+  *data = parseInt(env, argv[0], true, 0);
   return NULL;
 }
 napi_value get_int64_t(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  return NUMBER(*(int64_t *)(native + (uint64_t)data));
+  LOAD_GET(cbinfo, int64_t)
+  return NUMBER(*data);
 }
 napi_value set_int64_t(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo)
-  int64_t value;
-
-  NODE_API_CALL(napi_get_value_int64(env, argv[0], &value));
-  *(int *)(native + (uint64_t)data) = value;
+  LOAD_SET(cbinfo, int64_t)
+  *data = parseInt64(env, argv[0], true, 0);
   return NULL;
 }
 napi_value get_float(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  return NUMBER(*(float *)(native + (uint64_t)data));
+  LOAD_GET(cbinfo, float)
+  return NUMBER(*data);
 }
 napi_value set_float(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo)
-  double value;
-
-  NODE_API_CALL(napi_get_value_double(env, argv[0], &value));
-  *(double *)(native + (uint64_t)data) = value;
+  LOAD_SET(cbinfo, float)
+  *data = parseDouble(env, argv[0], true, 0);
   return NULL;
 }
 napi_value get_double(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  return NUMBER(*(float *)(native + (uint64_t)data));
+  LOAD_GET(cbinfo, double)
+  return NUMBER(*data);
 }
 napi_value set_double(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo)
-  double value;
-
-  NODE_API_CALL(napi_get_value_double(env, argv[0], &value));
-  *(double *)(native + (uint64_t)data) = value;
+  LOAD_SET(cbinfo, double)
+  *data = parseDouble(env, argv[0], true, 0);
   return NULL;
 }
 napi_value get_string(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  return STRING(*(char **)(native + (uint64_t)data));
+  LOAD_GET(cbinfo, char *)
+  return STRING(*data);
 }
 napi_value set_string(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo)
-  char **pointer = (char **)(native + (uint64_t)data);
-
-  free(*pointer);
-  *pointer = parseString(env, argv[0]);
+  LOAD_SET(cbinfo, char *)
+  free(*data);
+  *data = parseString(env, argv[0]);
   return NULL;
 }
 napi_value get_AVRational(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  return createAVRational(env, (AVRational *)(native + (uint64_t)data));
+  LOAD_GET(cbinfo, AVRational)
+  return createAVRational(env, data);
 }
 napi_value set_AVRational(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo)
-  parseAVRational(env, argv[0], (AVRational *)(native + (uint64_t)data));
+  LOAD_SET(cbinfo, AVRational)
+  parseAVRational(env, argv[0], data);
   return NULL;
 }
 napi_value get_External(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo)
-  void *value = *(void **)(native + (uint64_t)data);
-
-  return External(env, value, NULL, NULL);
+  LOAD_GET(cbinfo, void *)
+  return External(env, data, NULL, NULL);
 }

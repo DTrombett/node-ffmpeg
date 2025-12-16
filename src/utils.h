@@ -61,16 +61,9 @@
    set_##type,                                                                 \
    NULL,                                                                       \
    napi_enumerable | napi_writable,                                            \
-   (void *)offsetof(Wrap, prop)}
+   &native->prop}
 #define PROP_GET(name, prop, type)                                             \
-  {#name,                                                                      \
-   NULL,                                                                       \
-   NULL,                                                                       \
-   get_##type,                                                                 \
-   NULL,                                                                       \
-   NULL,                                                                       \
-   napi_enumerable,                                                            \
-   (void *)offsetof(Wrap, prop)}
+  {#name, NULL, NULL, get_##type, NULL, NULL, napi_enumerable, &native->prop}
 #define WRAP(name, type, finalize_cb, ...)                                     \
   static inline napi_value name(napi_env env, type *native) {                  \
     typedef type Wrap;                                                         \
@@ -92,24 +85,18 @@
     FREEZE(object);                                                            \
     return object;                                                             \
   }
-#define LOAD_SET(cbinfo)                                                       \
-  void *data;                                                                  \
-  napi_value thisArg;                                                          \
+#define LOAD_SET(cbinfo, type)                                                 \
+  type *data;                                                                  \
   napi_value argv[1];                                                          \
   size_t argc = 1;                                                             \
-  NODE_API_CALL(napi_get_cb_info(env, cbinfo, &argc, argv, &thisArg, &data));  \
-  if (!data || argv[0] == NULL)                                                \
-    return NULL;                                                               \
-  char *native = unwrap(env, thisArg);                                         \
-  if (!native)                                                                 \
+  NODE_API_CALL(                                                               \
+      napi_get_cb_info(env, cbinfo, &argc, argv, NULL, (void **)&data));       \
+  if (!data || !argv[0])                                                       \
     return NULL;
-#define LOAD_GET(cbinfo)                                                       \
-  void *data;                                                                  \
-  napi_value thisArg;                                                          \
-  NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &thisArg, &data));   \
-  char *native = unwrap(env, thisArg);                                         \
-  if (!native)                                                                 \
-    return NULL;
+#define LOAD_GET(cbinfo, type)                                                 \
+  type *data;                                                                  \
+  NODE_API_CALL(                                                               \
+      napi_get_cb_info(env, cbinfo, NULL, NULL, NULL, (void **)&data));
 #define OPT_SET(func, ...)                                                     \
   char *name = parseString(env, arguments[1]);                                 \
   int ret =                                                                    \

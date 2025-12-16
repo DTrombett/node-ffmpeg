@@ -8,6 +8,8 @@
 #include <libavutil/avutil.h>
 #include <node_api.h>
 
+#define EXPORT_FN(fn) NODE_SET_PROPERTY(exports, #fn, FUNCTION(fn));
+
 static void finalize_cb(napi_env env, void *finalize_data,
                         void *finalize_hint) {
   free(finalize_data);
@@ -67,17 +69,46 @@ static napi_value open2(napi_env env, napi_callback_info cbinfo) {
 static napi_value frameAlloc(napi_env env, napi_callback_info cbinfo) {
   return createAVFrame(env, av_frame_alloc());
 }
+static napi_value frameGetBuffer(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(2, cbinfo);
+  return NUMBER(av_frame_get_buffer(parseExternal(env, arguments[0]),
+                                    parseInt(env, arguments[1], true, 0)));
+}
+static napi_value frameMakeWritable(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  return NUMBER(av_frame_make_writable(parseExternal(env, arguments[0])));
+}
+static napi_value sendFrame(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(2, cbinfo);
+  return NUMBER(avcodec_send_frame(parseExternal(env, arguments[0]),
+                                   parseExternal(env, arguments[1])));
+}
+static napi_value receivePacket(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(2, cbinfo);
+  return NUMBER(avcodec_receive_packet(parseExternal(env, arguments[0]),
+                                       parseExternal(env, arguments[1])));
+}
+static napi_value packetUnref(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  av_packet_unref(parseExternal(env, arguments[0]));
+  return NULL;
+}
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
-  NODE_SET_PROPERTY(exports, "versionInfo", FUNCTION(versionInfo));
-  NODE_SET_PROPERTY(exports, "findEncoderByName", FUNCTION(findEncoderByName));
-  NODE_SET_PROPERTY(exports, "allocContext3", FUNCTION(allocContext3));
-  NODE_SET_PROPERTY(exports, "packetAlloc", FUNCTION(packetAlloc));
-  NODE_SET_PROPERTY(exports, "optSet", FUNCTION(optSet));
-  NODE_SET_PROPERTY(exports, "optSetInt", FUNCTION(optSetInt));
-  NODE_SET_PROPERTY(exports, "optSetDouble", FUNCTION(optSetDouble));
-  NODE_SET_PROPERTY(exports, "optSetQ", FUNCTION(optSetQ));
-  NODE_SET_PROPERTY(exports, "open2", FUNCTION(open2));
-  NODE_SET_PROPERTY(exports, "frameAlloc", FUNCTION(frameAlloc));
+  EXPORT_FN(versionInfo);
+  EXPORT_FN(findEncoderByName);
+  EXPORT_FN(allocContext3);
+  EXPORT_FN(packetAlloc);
+  EXPORT_FN(optSet);
+  EXPORT_FN(optSetInt);
+  EXPORT_FN(optSetDouble);
+  EXPORT_FN(optSetQ);
+  EXPORT_FN(open2);
+  EXPORT_FN(frameAlloc);
+  EXPORT_FN(frameGetBuffer);
+  EXPORT_FN(frameMakeWritable);
+  EXPORT_FN(sendFrame);
+  EXPORT_FN(receivePacket);
+  EXPORT_FN(packetUnref);
   return exports;
 }
