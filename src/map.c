@@ -1,6 +1,6 @@
 #include "map.h"
 
-PtrMapEntry *refMap = NULL;
+MapEntry *refMap = NULL;
 
 void mapFinalizeCb(napi_env env, void *finalize_data, void *finalize_hint) {
   napi_ref ref = mapDelete(finalize_data);

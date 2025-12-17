@@ -3,29 +3,29 @@
 #include "uthash.h"
 #include <node_api.h>
 
-typedef struct PtrMapEntry {
+typedef struct MapEntry {
   const void *key;
   napi_ref value;
   UT_hash_handle hh;
-} PtrMapEntry;
+} MapEntry;
 
-extern PtrMapEntry *refMap;
+extern MapEntry *refMap;
 
 inline void mapAdd(const void *key, napi_ref value) {
-  PtrMapEntry *entry = malloc(sizeof(PtrMapEntry));
+  MapEntry *entry = malloc(sizeof(MapEntry));
   entry->key = key;
   entry->value = value;
   HASH_ADD_PTR(refMap, key, entry);
 }
 
 inline napi_ref mapGet(const void *key) {
-  PtrMapEntry *entry = NULL;
+  MapEntry *entry = NULL;
   HASH_FIND_PTR(refMap, &key, entry);
   return entry ? entry->value : NULL;
 }
 
 inline napi_ref mapDelete(const void *key) {
-  PtrMapEntry *entry = NULL;
+  MapEntry *entry = NULL;
   HASH_FIND_PTR(refMap, &key, entry);
   if (entry) {
     napi_ref ref = entry->value;
@@ -38,7 +38,7 @@ inline napi_ref mapDelete(const void *key) {
 }
 
 inline void mapClear() {
-  PtrMapEntry *current, *tmp;
+  MapEntry *current, *tmp;
   HASH_ITER(hh, refMap, current, tmp) {
     HASH_DEL(refMap, current);
     free(current);
