@@ -10,10 +10,15 @@ WRAP(createAVRational, AVRational, NULL, PROP_GETSET(num, num, int),
 static inline void parseAVRational(napi_env env, napi_value object,
                                    AVRational *result) {
   napi_value value;
+  napi_ref ref;
 
+  mapDelete(result);
   NODE_API_CALL_DEFAULT(napi_get_named_property(env, object, "num", &value), );
   result->num = parseInt(env, value, true, result->num);
   NODE_API_CALL_DEFAULT(napi_get_named_property(env, object, "den", &value), );
   result->den = parseInt(env, value, true, result->den);
+  NODE_API_CALL_DEFAULT(
+      napi_add_finalizer(env, object, result, mapFinalizeCb, NULL, &ref), );
+  mapAdd(result, ref);
 }
 #endif

@@ -24,13 +24,17 @@ inline napi_ref mapGet(const void *key) {
   return entry ? entry->value : NULL;
 }
 
-inline void mapDelete(const void *key) {
+inline napi_ref mapDelete(const void *key) {
   PtrMapEntry *entry = NULL;
   HASH_FIND_PTR(refMap, &key, entry);
   if (entry) {
+    napi_ref ref = entry->value;
+
     HASH_DEL(refMap, entry);
     free(entry);
+    return ref;
   }
+  return NULL;
 }
 
 inline void mapClear() {

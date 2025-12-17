@@ -50,7 +50,21 @@ napi_value set_string(napi_env env, napi_callback_info cbinfo) {
 }
 napi_value get_AVRational(napi_env env, napi_callback_info cbinfo) {
   LOAD_GET(cbinfo, AVRational)
-  return createAVRational(env, data);
+  napi_ref ref = mapGet(data);
+  napi_value value;
+
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &value));
+    if (value)
+      return value;
+    else
+      mapDelete(data);
+  }
+  value = createAVRational(env, data);
+  NODE_API_CALL(
+      napi_add_finalizer(env, value, data, mapFinalizeCb, NULL, &ref));
+  mapAdd(data, ref);
+  return value;
 }
 napi_value set_AVRational(napi_env env, napi_callback_info cbinfo) {
   LOAD_SET(cbinfo, AVRational)

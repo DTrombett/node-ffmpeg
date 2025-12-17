@@ -73,7 +73,9 @@
     napi_value object;                                                         \
     if (ref) {                                                                 \
       NODE_API_CALL(napi_get_reference_value(env, ref, &object));              \
-      return object;                                                           \
+      if (object)                                                              \
+        return object;                                                         \
+      mapDelete(native);                                                       \
     }                                                                          \
     object = Object(env);                                                      \
     napi_property_descriptor properties[] = {__VA_ARGS__};                     \
@@ -230,11 +232,21 @@ static inline void *unwrap(napi_env env, napi_value object) {
 static inline napi_value External(napi_env env, void *data,
                                   napi_finalize finalize_cb,
                                   void *finalize_hint) {
-  napi_value result;
+  napi_ref ref = mapGet(data);
+  napi_value value;
 
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &value));
+    if (value)
+      return value;
+    mapDelete(data);
+  }
   NODE_API_CALL(
-      napi_create_external(env, data, finalize_cb, finalize_hint, &result));
-  return result;
+      napi_create_external(env, data, finalize_cb, finalize_hint, &value));
+  NODE_API_CALL(
+      napi_add_finalizer(env, value, data, mapFinalizeCb, NULL, &ref));
+  mapAdd(data, ref);
+  return value;
 }
 static inline void *parseExternal(napi_env env, napi_value value) {
   if (!value)
@@ -256,10 +268,26 @@ static inline void *parseExternal(napi_env env, napi_value value) {
 }
 static inline napi_value ArrayBuffer(napi_env env, size_t byte_length,
                                      void *external_data) {
+  napi_ref ref = mapGet(external_data);
+  napi_value value;
+
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &value));
+    if (value)
+      return value;
+    mapDelete(external_data);
+  }
+  NODE_API_CALL(napi_create_external_arraybuffer(
+      env, external_data, byte_length, NULL, NULL, &value));
+  NODE_API_CALL(
+      napi_add_finalizer(env, value, external_data, mapFinalizeCb, NULL, &ref));
+  mapAdd(external_data, ref);
+  return value;
+}
+static inline napi_value undefined(napi_env env) {
   napi_value result;
 
-  NODE_API_CALL(napi_create_external_arraybuffer(
-      env, external_data, byte_length, NULL, NULL, &result));
+  NODE_API_CALL(napi_get_undefined(env, &result));
   return result;
 }
 
