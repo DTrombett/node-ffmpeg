@@ -69,7 +69,9 @@ const encode = async (
 	for (let i = 0; i < 24; i++) {
 		ret = ffmpeg.frameMakeWritable(frame);
 		checkRet();
-		const [yb, ub, vb] = frame.data;
+		const [yb, ub, vb] = (frame.data as ArrayBuffer[]).map(
+			(buf) => new Uint8Array(buf),
+		);
 		const [yl, ul, vl] = frame.linesize;
 		const height = context.height;
 		const width = context.width;
