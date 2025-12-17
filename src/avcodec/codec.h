@@ -12,7 +12,7 @@ WRAP(createAVProfile, const AVProfile, NULL,
 static inline napi_value createProfiles(napi_env env,
                                         const AVProfile *profiles) {
   if (!profiles)
-    return NULL;
+    return UNDEFINED;
   napi_value array = Array(env);
 
   for (int i = 0; profiles[i].profile != AV_PROFILE_UNKNOWN; i++)

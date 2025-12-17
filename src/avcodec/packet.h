@@ -14,7 +14,7 @@ static napi_value get_data(napi_env env, napi_callback_info cbinfo) {
   AVPacket *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
+    return UNDEFINED;
   NODE_API_CALL(napi_create_external_arraybuffer(
       env, native->data, native->size, NULL, NULL, &object));
   return object;

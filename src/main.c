@@ -27,9 +27,9 @@ static napi_value findEncoderByName(napi_env env, napi_callback_info cbinfo) {
 }
 static napi_value allocContext3(napi_env env, napi_callback_info cbinfo) {
   NODE_LOAD_ARGUMENTS(1, cbinfo);
+  const AVCodec *codec = unwrap(env, arguments[0]);
 
-  return createAVCodecContext(
-      env, avcodec_alloc_context3(unwrap(env, arguments[0])));
+  return createAVCodecContext(env, avcodec_alloc_context3(codec));
 }
 static napi_value packetAlloc(napi_env env, napi_callback_info cbinfo) {
   return createAVPacket(env, av_packet_alloc());
@@ -91,7 +91,7 @@ static napi_value receivePacket(napi_env env, napi_callback_info cbinfo) {
 static napi_value packetUnref(napi_env env, napi_callback_info cbinfo) {
   NODE_LOAD_ARGUMENTS(1, cbinfo);
   av_packet_unref(parseExternal(env, arguments[0]));
-  return NULL;
+  return undefined(env);
 }
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {

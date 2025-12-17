@@ -1,5 +1,5 @@
 import ffmpeg from "ffmpeg.node";
-import { createWriteStream, type WriteStream } from "fs";
+import { createWriteStream, type WriteStream } from "node:fs";
 
 let ret = 0;
 const checkRet = () => {
@@ -13,7 +13,12 @@ const checkRet = () => {
 			),
 		});
 };
-const encode = async (context, frame, packet, file: WriteStream) => {
+const encode = async (
+	context: any,
+	frame: any,
+	packet: any,
+	file: WriteStream,
+) => {
 	ret = ffmpeg.sendFrame(context, frame);
 	checkRet();
 	while (ret >= 0) {
@@ -30,6 +35,7 @@ const encode = async (context, frame, packet, file: WriteStream) => {
 };
 (async () => {
 	console.log("ffmpeg version:", ffmpeg.versionInfo());
+	console.time("encode time");
 	const codec = ffmpeg.findEncoderByName("libx264");
 	// console.log("Codec:", codec);
 	const context = ffmpeg.allocContext3(codec);
@@ -63,23 +69,24 @@ const encode = async (context, frame, packet, file: WriteStream) => {
 	for (let i = 0; i < 24; i++) {
 		ret = ffmpeg.frameMakeWritable(frame);
 		checkRet();
-		console.log("Creating frame", i);
-		for (let y = 0; y < context.height; y++)
-			for (let x = 0; x < context.width; x++)
-				frame.data[0][y * frame.linesize[0] + x] = (x + y + i * 3) % 256;
-		for (let y = 0; y < context.height / 2; y++)
-			for (let x = 0; x < context.width / 2; x++) {
-				frame.data[1][y * frame.linesize[1] + x] = (128 + y + i * 2) % 256;
-				frame.data[2][y * frame.linesize[2] + x] = (64 + x + i * 5) % 256;
+		const [yb, ub, vb] = frame.data;
+		const [yl, ul, vl] = frame.linesize;
+		const height = context.height;
+		const width = context.width;
+
+		for (let y = 0; y < height; y++)
+			for (let x = 0; x < width; x++) yb[y * yl + x] = (x + y + i * 3) % 256;
+		for (let y = 0; y < height / 2; y++)
+			for (let x = 0; x < width / 2; x++) {
+				ub[y * ul + x] = (128 + y + i * 2) % 256;
+				vb[y * vl + x] = (64 + x + i * 5) % 256;
 			}
 		frame.pts = i;
-		console.log("Encoding frame", frame.pts);
 		await encode(context, frame, packet, file);
 	}
-	console.log("Flushing encoder.");
 	encode(context, undefined, packet, file);
 	file.end();
-	console.log("Encoding finished.");
+	console.timeEnd("encode time");
 })();
 
 // 1765645200

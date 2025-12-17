@@ -24,31 +24,31 @@ WRAP(createAVChannelLayout, AVChannelLayout, NULL,
 
 static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
   napi_value object;
-  // napi_ref ref;
+  napi_ref ref;
   NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &object, NULL));
   AVFrame *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
-  // object = NULL;
-  // ref = mapGet(native->data);
-  // if (ref) {
-  //   NODE_API_CALL(napi_get_reference_value(env, ref, &object));
-  //   if (!object) {
-  //     mapDelete(native->data);
-  //     ref = NULL;
-  //   }
-  // }
-  // if (!object)
-  NODE_API_CALL(
-      napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
+    return UNDEFINED;
+  object = NULL;
+  ref = mapGet(native->data, sizeof(native->data));
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &object));
+    if (!object) {
+      mapDelete(native->data, sizeof(native->data));
+      ref = NULL;
+    }
+  }
+  if (!object)
+    NODE_API_CALL(
+        napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
   if (native->nb_samples > 0) {
     for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
       NODE_API_CALL(napi_set_element(
           env, object, i,
           native->data[i]
               ? ArrayBuffer(env, native->linesize[0], native->data[i])
-              : NULL));
+              : UNDEFINED));
   } else {
     size_t size[AV_NUM_DATA_POINTERS];
     LOAD_SIZES(size, native);
@@ -59,12 +59,13 @@ static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
                                ? ArrayBuffer(env, size[i], native->data[i])
                                : undefined(env)));
   }
-  // if (!ref) {
-  // NODE_API_CALL(napi_add_finalizer(env, object, native->data, mapFinalizeCb,
-  //                                  NULL, &ref));
-  // mapAdd(native->data, ref);
-  FREEZE(object);
-  // }
+  if (!ref) {
+    MapEntry *entry = mapAdd(native->data, sizeof(native->data), NULL);
+    NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
+                                     NULL, &ref));
+    entry->value = ref;
+    FREEZE(object);
+  }
   return object;
 }
 
@@ -75,13 +76,13 @@ static napi_value get_frameLinesize(napi_env env, napi_callback_info cbinfo) {
   AVFrame *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
+    return UNDEFINED;
   object = NULL;
-  ref = mapGet(&native->linesize);
+  ref = mapGet(native->linesize, sizeof(native->linesize));
   if (ref) {
     NODE_API_CALL(napi_get_reference_value(env, ref, &object));
     if (!object) {
-      mapDelete(&native->linesize);
+      mapDelete(native->linesize, sizeof(native->linesize));
       ref = NULL;
     }
   }
@@ -92,9 +93,10 @@ static napi_value get_frameLinesize(napi_env env, napi_callback_info cbinfo) {
     NODE_API_CALL(
         napi_set_element(env, object, i, NUMBER(native->linesize[i])));
   if (!ref) {
-    NODE_API_CALL(napi_add_finalizer(env, object, &native->linesize,
-                                     mapFinalizeCb, NULL, &ref));
-    mapAdd(&native->linesize, ref);
+    MapEntry *entry = mapAdd(native->linesize, sizeof(native->linesize), NULL);
+    NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
+                                     NULL, &ref));
+    entry->value = ref;
     FREEZE(object);
   }
   return object;
@@ -108,13 +110,13 @@ static napi_value get_frameExtendedData(napi_env env,
   AVFrame *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
+    return UNDEFINED;
   object = NULL;
-  ref = mapGet(&native->extended_data);
+  ref = mapGet(native->extended_data, sizeof(native->extended_data));
   if (ref) {
     NODE_API_CALL(napi_get_reference_value(env, ref, &object));
     if (!object) {
-      mapDelete(&native->extended_data);
+      mapDelete(native->extended_data, sizeof(native->extended_data));
       ref = NULL;
     }
   }
@@ -136,9 +138,11 @@ static napi_value get_frameExtendedData(napi_env env,
           env, object, i, ArrayBuffer(env, size[i], native->extended_data[i])));
   }
   if (!ref) {
-    NODE_API_CALL(napi_add_finalizer(env, object, &native->extended_data,
-                                     mapFinalizeCb, NULL, &ref));
-    mapAdd(&native->extended_data, ref);
+    MapEntry *entry =
+        mapAdd(native->extended_data, sizeof(native->extended_data), NULL);
+    NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
+                                     NULL, &ref));
+    entry->value = ref;
     FREEZE(object);
   }
   return object;

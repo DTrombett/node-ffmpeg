@@ -24,7 +24,7 @@
       return def;                                                              \
     }                                                                          \
   } while (0)
-#define NODE_API_CALL(call) NODE_API_CALL_DEFAULT(call, NULL)
+#define NODE_API_CALL(call) NODE_API_CALL_DEFAULT(call, UNDEFINED)
 #define NODE_SET_PROPERTY(object, name, value)                                 \
   NODE_API_CALL(napi_set_named_property(env, (object), (name), (value)))
 #define NODE_LOAD_ARGUMENTS(count, cbinfo)                                     \
@@ -68,22 +68,23 @@
   static inline napi_value name(napi_env env, type *native) {                  \
     typedef type Wrap;                                                         \
     if (!native)                                                               \
-      return NULL;                                                             \
-    napi_ref ref = mapGet(native);                                             \
+      return UNDEFINED;                                                        \
+    napi_ref ref = mapGet((void *)native, sizeof(type));                       \
     napi_value object;                                                         \
     if (ref) {                                                                 \
       NODE_API_CALL(napi_get_reference_value(env, ref, &object));              \
       if (object)                                                              \
         return object;                                                         \
-      mapDelete(native);                                                       \
+      mapDelete((void *)native, sizeof(type));                                 \
     }                                                                          \
     object = Object(env);                                                      \
     napi_property_descriptor properties[] = {__VA_ARGS__};                     \
     NODE_API_CALL(napi_define_properties(                                      \
         env, object, sizeof(properties) / sizeof(properties[0]), properties)); \
-    NODE_API_CALL(napi_wrap(env, object, (void *)native, mapFinalizeCb,        \
+    MapEntry *entry = mapAdd((void *)native, sizeof(type), NULL);              \
+    NODE_API_CALL(napi_wrap(env, object, &entry->key, mapFinalizeCb,           \
                             finalize_cb, &ref));                               \
-    mapAdd(native, ref);                                                       \
+    entry->value = ref;                                                        \
     FREEZE(object);                                                            \
     return object;                                                             \
   }
@@ -94,7 +95,7 @@
   NODE_API_CALL(                                                               \
       napi_get_cb_info(env, cbinfo, &argc, argv, NULL, (void **)&data));       \
   if (!data || !argv[0])                                                       \
-    return NULL;
+    return UNDEFINED;
 #define LOAD_GET(cbinfo, type)                                                 \
   type *data;                                                                  \
   NODE_API_CALL(                                                               \
@@ -105,12 +106,19 @@
       av_opt_set##func(parseExternal(env, arguments[0]), name, __VA_ARGS__,    \
                        parseInt(env, arguments[3], true, 0));                  \
   free(name);
+#define UNDEFINED undefined(env)
 
 #include "map.h"
 #include <node_api.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+static inline napi_value undefined(napi_env env) {
+  napi_value result;
+
+  NODE_API_CALL(napi_get_undefined(env, &result));
+  return result;
+}
 static inline napi_valuetype nodeTypeof(napi_env env, napi_value value) {
   napi_valuetype result;
 
@@ -119,7 +127,7 @@ static inline napi_valuetype nodeTypeof(napi_env env, napi_value value) {
 };
 static inline napi_value String(napi_env env, const char *str) {
   if (!str)
-    return NULL;
+    return UNDEFINED;
   napi_value result;
 
   NODE_API_CALL(napi_create_string_utf8(env, str, NAPI_AUTO_LENGTH, &result));
@@ -182,11 +190,13 @@ static inline char *parseString(napi_env env, napi_value value) {
 
   if (nodeTypeof(env, value) != napi_string)
     return NULL;
-  NODE_API_CALL(napi_get_value_string_utf8(env, value, NULL, 0, &length));
+  NODE_API_CALL_DEFAULT(
+      napi_get_value_string_utf8(env, value, NULL, 0, &length), NULL);
   if (!length)
     return NULL;
   char *name = malloc(length + 1);
-  NODE_API_CALL(napi_get_value_string_utf8(env, value, name, length + 1, NULL));
+  NODE_API_CALL_DEFAULT(
+      napi_get_value_string_utf8(env, value, name, length + 1, NULL), NULL);
   return name;
 }
 static inline int parseInt(napi_env env, napi_value value, bool ignoreNaN,
@@ -227,25 +237,27 @@ static inline void *unwrap(napi_env env, napi_value object) {
     napi_get_and_clear_last_exception(env, result);
     return NULL;
   }
-  return result;
+  return ((MapKey *)(result))->ptr;
 }
 static inline napi_value External(napi_env env, void *data,
                                   napi_finalize finalize_cb,
                                   void *finalize_hint) {
-  napi_ref ref = mapGet(data);
+  // TODO: fix size argument
+  napi_ref ref = mapGet(data, 0);
   napi_value value;
 
   if (ref) {
     NODE_API_CALL(napi_get_reference_value(env, ref, &value));
     if (value)
       return value;
-    mapDelete(data);
+    mapDelete(data, 0);
   }
   NODE_API_CALL(
       napi_create_external(env, data, finalize_cb, finalize_hint, &value));
+  MapEntry *entry = mapAdd(data, 0, NULL);
   NODE_API_CALL(
-      napi_add_finalizer(env, value, data, mapFinalizeCb, NULL, &ref));
-  mapAdd(data, ref);
+      napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
+  entry->value = ref;
   return value;
 }
 static inline void *parseExternal(napi_env env, napi_value value) {
@@ -263,32 +275,28 @@ static inline void *parseExternal(napi_env env, napi_value value) {
       napi_get_and_clear_last_exception(env, result);
       return NULL;
     }
+    result = ((MapKey *)(result))->ptr;
   }
   return result;
 }
 static inline napi_value ArrayBuffer(napi_env env, size_t byte_length,
                                      void *external_data) {
-  napi_ref ref = mapGet(external_data);
+  napi_ref ref = mapGet(external_data, byte_length);
   napi_value value;
 
   if (ref) {
     NODE_API_CALL(napi_get_reference_value(env, ref, &value));
     if (value)
       return value;
-    mapDelete(external_data);
+    mapDelete(external_data, byte_length);
   }
   NODE_API_CALL(napi_create_external_arraybuffer(
       env, external_data, byte_length, NULL, NULL, &value));
+  MapEntry *entry = mapAdd(external_data, byte_length, NULL);
   NODE_API_CALL(
-      napi_add_finalizer(env, value, external_data, mapFinalizeCb, NULL, &ref));
-  mapAdd(external_data, ref);
+      napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
+  entry->value = ref;
   return value;
-}
-static inline napi_value undefined(napi_env env) {
-  napi_value result;
-
-  NODE_API_CALL(napi_get_undefined(env, &result));
-  return result;
 }
 
 napi_value get_int(napi_env env, napi_callback_info cbinfo);
