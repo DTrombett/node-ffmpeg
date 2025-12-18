@@ -198,8 +198,10 @@ static inline char *parseString(napi_env env, napi_value value) {
   if (!length)
     return NULL;
   char *name = malloc(length + 1);
-  if (!name)
+  if (!name) {
+    napi_throw_error(env, NULL, "Failed to allocate memory for string");
     return NULL;
+  }
   NODE_API_CALL_DEFAULT(
       napi_get_value_string_utf8(env, value, name, length + 1, NULL), NULL);
   return name;
