@@ -1,5 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
+#include <stddef.h>
 #define NODE_API_CALL_DEFAULT(call, def)                                       \
   do {                                                                         \
     napi_status status = (call);                                               \
@@ -249,19 +250,18 @@ static inline void *unwrap(napi_env env, napi_value object) {
 static inline napi_value External(napi_env env, void *data,
                                   napi_finalize finalize_cb,
                                   void *finalize_hint) {
-  // TODO: fix size argument
-  napi_ref ref = mapGet(data, 0);
+  napi_ref ref = mapGet(data, sizeof(data));
   napi_value value;
 
   if (ref) {
     NODE_API_CALL(napi_get_reference_value(env, ref, &value));
     if (value)
       return value;
-    mapDelete(data, 0);
+    mapDelete(data, sizeof(data));
   }
   NODE_API_CALL(
       napi_create_external(env, data, finalize_cb, finalize_hint, &value));
-  MapEntry *entry = mapAdd(data, 0, NULL);
+  MapEntry *entry = mapAdd(data, sizeof(data), NULL);
   NODE_API_CALL(
       napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
   entry->value = ref;
