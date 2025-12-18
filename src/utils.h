@@ -85,6 +85,10 @@
     NODE_API_CALL(napi_define_properties(                                      \
         env, object, sizeof(properties) / sizeof(properties[0]), properties)); \
     MapEntry *entry = mapAdd((void *)native, sizeof(type), NULL);              \
+    if (!entry) {                                                              \
+      napi_throw_error(env, NULL, "Failed to allocate map entry");             \
+      return NULL;                                                             \
+    }                                                                          \
     NODE_API_CALL(napi_wrap(env, object, &entry->key, mapFinalizeCb,           \
                             finalize_cb, &ref));                               \
     entry->value = ref;                                                        \
@@ -260,6 +264,10 @@ static inline napi_value External(napi_env env, void *data,
   NODE_API_CALL(
       napi_create_external(env, data, finalize_cb, finalize_hint, &value));
   MapEntry *entry = mapAdd(data, sizeof(data), NULL);
+  if (!entry) {
+    napi_throw_error(env, NULL, "Failed to allocate map entry");
+    return NULL;
+  }
   NODE_API_CALL(
       napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
   entry->value = ref;
@@ -298,6 +306,10 @@ static inline napi_value ArrayBuffer(napi_env env, size_t byte_length,
   NODE_API_CALL(napi_create_external_arraybuffer(
       env, external_data, byte_length, NULL, NULL, &value));
   MapEntry *entry = mapAdd(external_data, byte_length, NULL);
+  if (!entry) {
+    napi_throw_error(env, NULL, "Failed to allocate map entry");
+    return NULL;
+  }
   NODE_API_CALL(
       napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
   entry->value = ref;

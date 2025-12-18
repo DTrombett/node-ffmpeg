@@ -20,10 +20,8 @@ extern MapEntry *refMap;
 inline MapEntry *mapAdd(void *ptr, size_t size, napi_ref value) {
   MapEntry *entry = malloc(sizeof(MapEntry));
 
-  if (!entry) {
-    fprintf(stderr, "Failed to allocate memory for MapEntry\n");
+  if (!entry)
     return NULL;
-  }
   memset(entry, 0, sizeof(MapEntry));
   entry->key.ptr = ptr;
   entry->key.size = size;

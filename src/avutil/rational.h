@@ -17,6 +17,10 @@ static inline void parseAVRational(napi_env env, napi_value object,
   NODE_API_CALL_DEFAULT(napi_get_named_property(env, object, "den", &value), );
   result->den = parseInt(env, value, true, result->den);
   MapEntry *entry = mapAdd(result, sizeof(*result), NULL);
+  if (!entry) {
+    napi_throw_error(env, NULL, "Failed to allocate map entry");
+    return;
+  }
   NODE_API_CALL_DEFAULT(napi_add_finalizer(env, object, &entry->key,
                                            mapFinalizeCb, NULL, &ref), );
   entry->value = ref;

@@ -61,6 +61,10 @@ static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
   }
   if (!ref) {
     MapEntry *entry = mapAdd(native->data, sizeof(native->data), NULL);
+    if (!entry) {
+      napi_throw_error(env, NULL, "Failed to allocate map entry");
+      return NULL;
+    }
     NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
                                      NULL, &ref));
     entry->value = ref;
@@ -94,6 +98,10 @@ static napi_value get_frameLinesize(napi_env env, napi_callback_info cbinfo) {
         napi_set_element(env, object, i, NUMBER(native->linesize[i])));
   if (!ref) {
     MapEntry *entry = mapAdd(native->linesize, sizeof(native->linesize), NULL);
+    if (!entry) {
+      napi_throw_error(env, NULL, "Failed to allocate map entry");
+      return NULL;
+    }
     NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
                                      NULL, &ref));
     entry->value = ref;
@@ -140,6 +148,10 @@ static napi_value get_frameExtendedData(napi_env env,
   if (!ref) {
     MapEntry *entry =
         mapAdd(native->extended_data, sizeof(native->extended_data), NULL);
+    if (!entry) {
+      napi_throw_error(env, NULL, "Failed to allocate map entry");
+      return NULL;
+    }
     NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
                                      NULL, &ref));
     entry->value = ref;

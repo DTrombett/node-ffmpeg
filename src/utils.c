@@ -61,6 +61,10 @@ napi_value get_AVRational(napi_env env, napi_callback_info cbinfo) {
   }
   value = createAVRational(env, data);
   MapEntry *entry = mapAdd(data, sizeof(*data), NULL);
+  if (!entry) {
+    napi_throw_error(env, NULL, "Failed to allocate map entry");
+    return NULL;
+  }
   NODE_API_CALL(
       napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
   entry->value = ref;
