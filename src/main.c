@@ -1,8 +1,8 @@
 #define NAPI_VERSION 10
 #include "avcodec/CodecContext.h"
 #include "avcodec/codec.h"
-#include "avcodec/frame.h"
 #include "avcodec/packet.h"
+#include "avutil/frame.h"
 #include "avutil/rational.h"
 #include "utils.h"
 #include <libavcodec/avcodec.h>

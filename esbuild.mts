@@ -4,6 +4,7 @@ await build({
 	entryPoints: ["lib/index.ts", "tests/*.ts"],
 	alias: {
 		"ffmpeg.node": "./ffmpeg.node",
+		"libavutil.node": "./libavutil.node",
 	},
 	bundle: true,
 	charset: "utf8",

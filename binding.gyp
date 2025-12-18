@@ -19,6 +19,20 @@
 				"<(module_root_dir)/deps/ffmpeg/lib/swresample.lib",
 				"<(module_root_dir)/deps/ffmpeg/lib/swscale.lib"
 			]
+		},
+		{
+			"target_name": "libavutil",
+			"sources": [
+				"src/libavutil.c",
+				"src/map.c",
+				"src/utils.c"
+			],
+			"include_dirs": [
+				"deps/ffmpeg/include"
+			],
+			"libraries": [
+				"<(module_root_dir)/deps/ffmpeg/lib/avutil.lib"
+			]
 		}
 	]
 }

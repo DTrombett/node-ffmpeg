@@ -1,6 +1,7 @@
 #ifndef FRAME_H
 #define FRAME_H
 #include "../utils.h"
+#include "channelLayout.h"
 #include <libavutil/frame.h>
 #include <libavutil/imgutils.h>
 
@@ -17,10 +18,6 @@ static void finalizeFrame(napi_env env, void *finalize_data,
                           void *finalize_hint) {
   av_frame_free((AVFrame **)&finalize_data);
 }
-
-WRAP(createAVChannelLayout, AVChannelLayout, NULL,
-     PROP_GETSET(order, order, int), PROP_GETSET(nbChannels, nb_channels, int),
-     PROP_GETSET(mask, u.mask, int64_t), PROP_CONST(map, NULL));
 
 static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
   napi_value object;

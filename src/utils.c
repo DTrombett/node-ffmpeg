@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "avutil/rational.h"
 
 napi_value get_int(napi_env env, napi_callback_info cbinfo) {
   LOAD_GET(cbinfo, int)
@@ -45,34 +44,6 @@ napi_value set_string(napi_env env, napi_callback_info cbinfo) {
   LOAD_SET(cbinfo, char *)
   free(*data);
   *data = parseString(env, argv[0]);
-  return UNDEFINED;
-}
-napi_value get_AVRational(napi_env env, napi_callback_info cbinfo) {
-  LOAD_GET(cbinfo, AVRational)
-  napi_ref ref = mapGet(data, sizeof(*data));
-  napi_value value;
-
-  if (ref) {
-    NODE_API_CALL(napi_get_reference_value(env, ref, &value));
-    if (value)
-      return value;
-    mapDelete(data, sizeof(*data));
-    ref = NULL;
-  }
-  value = createAVRational(env, data);
-  MapEntry *entry = mapAdd(data, sizeof(*data), NULL);
-  if (!entry) {
-    napi_throw_error(env, NULL, "Failed to allocate map entry");
-    return NULL;
-  }
-  NODE_API_CALL(
-      napi_add_finalizer(env, value, &entry->key, mapFinalizeCb, NULL, &ref));
-  entry->value = ref;
-  return value;
-}
-napi_value set_AVRational(napi_env env, napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo, AVRational)
-  parseAVRational(env, argv[0], data);
   return UNDEFINED;
 }
 napi_value get_External(napi_env env, napi_callback_info cbinfo) {

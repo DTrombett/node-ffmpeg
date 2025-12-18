@@ -114,10 +114,9 @@
                        parseInt(env, arguments[3], true, 0));                  \
   free(name);
 #define UNDEFINED undefined(env)
+#define EXPORT_FN(fn, orig) NODE_SET_PROPERTY(exports, #orig, FUNCTION(fn));
 
 #include "map.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 static inline napi_value undefined(napi_env env) {
   napi_value result;
