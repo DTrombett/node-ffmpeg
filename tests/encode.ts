@@ -33,6 +33,7 @@ const encode = async (
 		await promise;
 	}
 };
+
 (async () => {
 	console.log("ffmpeg version:", ffmpeg.versionInfo());
 	console.time("encode time");
@@ -90,5 +91,3 @@ const encode = async (
 	file.end();
 	console.timeEnd("encode time");
 })();
-
-// 1765645200

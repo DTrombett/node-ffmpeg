@@ -1,6 +1,6 @@
 {
-	"extends": ["@tsconfig/node-lts", "@tsconfig/node-lts"],
-	"include": ["lib"],
+	"extends": ["@tsconfig/strictest", "@tsconfig/node-lts"],
+	"include": ["lib", "tests"],
 	"compilerOptions": {
 		"isolatedModules": true,
 		"moduleResolution": "bundler",
