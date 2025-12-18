@@ -57,7 +57,7 @@ static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
           napi_set_element(env, object, i,
                            native->data[i] && size[i]
                                ? ArrayBuffer(env, size[i], native->data[i])
-                               : undefined(env)));
+                               : UNDEFINED));
   }
   if (!ref) {
     MapEntry *entry = mapAdd(native->data, sizeof(native->data), NULL);
