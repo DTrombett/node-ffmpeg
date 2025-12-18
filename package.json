@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"description": "",
 	"author": "DTrombett <d@trombett.org>",
-	"license": "GPL",
+	"license": "GPL-3.0",
 	"type": "commonjs",
 	"gypfile": true,
 	"main": "./dist/index.js",
