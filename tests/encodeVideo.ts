@@ -1,13 +1,13 @@
 // @ts-expect-error: types not added yet
 import ffmpeg from "ffmpeg.node";
-import { createWriteStream, type WriteStream } from "node:fs";
+import { open, type FileHandle } from "node:fs/promises";
 
 let ret: number;
 const encode = async (
 	encCtx: any,
 	frame: any,
 	pkt: any,
-	outFile: WriteStream,
+	outFile: FileHandle,
 ) => {
 	if (frame) console.log(`Send frame ${frame.pts}`);
 	ret = ffmpeg.sendFrame(encCtx, frame);
@@ -17,13 +17,8 @@ const encode = async (
 		if (ret == -11 || ret == -541478725) return;
 		else if (ret < 0) throw new Error("Error during encoding");
 		console.log(`Write packet pts ${pkt.pts} (size=${pkt.size})`);
-		// TODO: Can we remove this?
-		const { promise, resolve } = Promise.withResolvers<void>();
-		outFile.write(pkt.data, () => {
-			ffmpeg.packetUnref(pkt);
-			resolve();
-		});
-		await promise;
+		await outFile.write(pkt.data);
+		ffmpeg.packetUnref(pkt);
 	}
 };
 
@@ -48,7 +43,7 @@ const main = async (argc: number, argv: string[]) => {
 	if (codec.id === 27) ffmpeg.optSet(c.privData, "preset", "slow", 0);
 	ret = ffmpeg.open2(c, codec, null);
 	if (ret < 0) throw new Error(`Could not open codec: ${ffmpeg.err2str(ret)}`);
-	const f = createWriteStream(filename!);
+	const f = await open(filename!, "w");
 	const frame = ffmpeg.frameAlloc();
 	if (!frame) throw new Error("Could not allocate video frame");
 	frame.format = c.pixFmt;
@@ -77,7 +72,7 @@ const main = async (argc: number, argv: string[]) => {
 	await encode(c, null, pkt, f);
 	if (codec.id === 1 || codec.id === 2)
 		f.write(new Uint8Array([0, 0, 1, 0xb7]));
-	f.end();
+	f.close();
 	ffmpeg.freeContext(c);
 	ffmpeg.frameFree(frame);
 	ffmpeg.packetFree(pkt);
