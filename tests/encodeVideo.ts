@@ -19,7 +19,7 @@ const encode = async (
 		console.log(`Write packet pts ${pkt.pts} (size=${pkt.size})`);
 		// TODO: Can we remove this?
 		const { promise, resolve } = Promise.withResolvers<void>();
-		outFile.write(new Uint8Array(pkt.data), () => {
+		outFile.write(pkt.data, () => {
 			ffmpeg.packetUnref(pkt);
 			resolve();
 		});
@@ -59,9 +59,7 @@ const main = async (argc: number, argv: string[]) => {
 	for (let i = 0; i < 25; i++) {
 		ret = ffmpeg.frameMakeWritable(frame);
 		if (ret < 0) throw new Error("Frame not writable");
-		const [yb, ub, vb] = (frame.data as ArrayBuffer[]).map(
-			(buf) => new Uint8Array(buf),
-		);
+		const [yb, ub, vb] = frame.data;
 		const [yl, ul, vl] = frame.linesize;
 		const height = c.height;
 		const width = c.width;

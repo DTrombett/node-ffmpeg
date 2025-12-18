@@ -47,17 +47,16 @@ static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
       NODE_API_CALL(napi_set_element(
           env, object, i,
           native->data[i]
-              ? ArrayBuffer(env, native->linesize[0], native->data[i])
+              ? Uint8Array(env, native->linesize[0], native->data[i])
               : UNDEFINED));
   } else {
     size_t size[AV_NUM_DATA_POINTERS];
     LOAD_SIZES(size, native);
     for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
-      NODE_API_CALL(
-          napi_set_element(env, object, i,
-                           native->data[i] && size[i]
-                               ? ArrayBuffer(env, size[i], native->data[i])
-                               : UNDEFINED));
+      NODE_API_CALL(napi_set_element(
+          env, object, i,
+          native->data[i] && size[i] ? Uint8Array(env, size[i], native->data[i])
+                                     : UNDEFINED));
   }
   if (!ref) {
     MapEntry *entry = mapAdd(native->data, sizeof(native->data), NULL);
@@ -136,14 +135,14 @@ static napi_value get_frameExtendedData(napi_env env,
          i < native->ch_layout.nb_channels && native->extended_data[i]; i++)
       NODE_API_CALL(napi_set_element(
           env, object, i,
-          ArrayBuffer(env, native->linesize[0], native->extended_data[i])));
+          Uint8Array(env, native->linesize[0], native->extended_data[i])));
   else {
     size_t size[AV_NUM_DATA_POINTERS];
     LOAD_SIZES(size, native);
     for (int i = 0;
          i < AV_NUM_DATA_POINTERS && native->extended_data[i] && size[i]; i++)
       NODE_API_CALL(napi_set_element(
-          env, object, i, ArrayBuffer(env, size[i], native->extended_data[i])));
+          env, object, i, Uint8Array(env, size[i], native->extended_data[i])));
   }
   if (!ref) {
     MapEntry *entry =

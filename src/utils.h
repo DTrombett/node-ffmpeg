@@ -292,20 +292,22 @@ static inline void *parseExternal(napi_env env, napi_value value) {
   }
   return result;
 }
-static inline napi_value ArrayBuffer(napi_env env, size_t byte_length,
-                                     void *external_data) {
-  napi_ref ref = mapGet(external_data, byte_length);
+static inline napi_value Uint8Array(napi_env env, size_t size,
+                                    void *external_data) {
+  napi_ref ref = mapGet(external_data, size);
   napi_value value;
 
   if (ref) {
     NODE_API_CALL(napi_get_reference_value(env, ref, &value));
     if (value)
       return value;
-    mapDelete(external_data, byte_length);
+    mapDelete(external_data, size);
   }
-  NODE_API_CALL(napi_create_external_arraybuffer(
-      env, external_data, byte_length, NULL, NULL, &value));
-  MapEntry *entry = mapAdd(external_data, byte_length, NULL);
+  NODE_API_CALL(napi_create_external_arraybuffer(env, external_data, size, NULL,
+                                                 NULL, &value));
+  NODE_API_CALL(
+      napi_create_typedarray(env, napi_uint8_array, size, value, 0, &value));
+  MapEntry *entry = mapAdd(external_data, size, NULL);
   if (!entry) {
     napi_throw_error(env, NULL, "Failed to allocate map entry");
     return NULL;
