@@ -10,15 +10,15 @@ const encode = async (
 	outFile: FileHandle,
 ) => {
 	if (frame) console.log(`Send frame ${frame.pts}`);
-	ret = ffmpeg.sendFrame(encCtx, frame);
+	ret = ffmpeg.avcodec_send_frame(encCtx, frame);
 	if (ret < 0) throw new Error("Error sending a frame for encoding");
 	while (ret >= 0) {
-		ret = ffmpeg.receivePacket(encCtx, pkt);
+		ret = ffmpeg.avcodec_receive_packet(encCtx, pkt);
 		if (ret == -11 || ret == -541478725) return;
 		else if (ret < 0) throw new Error("Error during encoding");
 		console.log(`Write packet pts ${pkt.pts} (size=${pkt.size})`);
 		await outFile.write(pkt.data);
-		ffmpeg.packetUnref(pkt);
+		ffmpeg.av_packet_unref(pkt);
 	}
 };
 
@@ -26,11 +26,11 @@ const main = async (argc: number, argv: string[]) => {
 	if (argc <= 3)
 		throw new Error(`Usage: ${argv[0]} ${argv[1]} <output file> <codec name>`);
 	const [, , filename, codecName] = argv;
-	const codec = ffmpeg.findEncoderByName(codecName);
+	const codec = ffmpeg.avcodec_find_encoder_by_name(codecName);
 	if (!codec) throw new Error(`Codec '${codecName}' not found`);
-	const c = ffmpeg.allocContext3(codec);
+	const c = ffmpeg.avcodec_alloc_context3(codec);
 	if (!c) throw new Error("Could not allocate video codec context");
-	const pkt = ffmpeg.packetAlloc();
+	const pkt = ffmpeg.av_packet_alloc();
 	if (!pkt) throw new Error("Could not allocate video packet");
 	c.bitRate = 400000;
 	c.width = 352;
@@ -40,19 +40,19 @@ const main = async (argc: number, argv: string[]) => {
 	c.gopSize = 10;
 	c.maxBFrames = 1;
 	c.pixFmt = 0;
-	if (codec.id === 27) ffmpeg.optSet(c.privData, "preset", "slow", 0);
-	ret = ffmpeg.open2(c, codec, null);
+	if (codec.id === 27) ffmpeg.av_opt_set(c.privData, "preset", "slow", 0);
+	ret = ffmpeg.avcodec_open2(c, codec, null);
 	if (ret < 0) throw new Error(`Could not open codec: ${ffmpeg.err2str(ret)}`);
 	const f = await open(filename!, "w");
-	const frame = ffmpeg.frameAlloc();
+	const frame = ffmpeg.av_frame_alloc();
 	if (!frame) throw new Error("Could not allocate video frame");
 	frame.format = c.pixFmt;
 	frame.width = c.width;
 	frame.height = c.height;
-	ret = ffmpeg.frameGetBuffer(frame, 0);
+	ret = ffmpeg.av_frame_get_buffer(frame, 0);
 	if (ret < 0) throw new Error("Could not allocate the video frame data");
 	for (let i = 0; i < 25; i++) {
-		ret = ffmpeg.frameMakeWritable(frame);
+		ret = ffmpeg.av_frame_make_writable(frame);
 		if (ret < 0) throw new Error("Frame not writable");
 		const [yb, ub, vb] = frame.data;
 		const [yl, ul, vl] = frame.linesize;
@@ -73,9 +73,9 @@ const main = async (argc: number, argv: string[]) => {
 	if (codec.id === 1 || codec.id === 2)
 		f.write(new Uint8Array([0, 0, 1, 0xb7]));
 	f.close();
-	ffmpeg.freeContext(c);
-	ffmpeg.frameFree(frame);
-	ffmpeg.packetFree(pkt);
+	ffmpeg.avcodec_free_context(c);
+	ffmpeg.av_frame_free(frame);
+	ffmpeg.av_packet_free(pkt);
 };
 
 main(process.argv.length, process.argv);
