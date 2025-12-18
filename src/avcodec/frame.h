@@ -3,7 +3,6 @@
 #include "../utils.h"
 #include <libavutil/frame.h>
 #include <libavutil/imgutils.h>
-#include <node_api.h>
 
 #define LOAD_SIZES(size, native)                                               \
   {                                                                            \
@@ -13,17 +12,9 @@
     av_image_fill_plane_sizes(size, native->format, native->height,            \
                               linesizes);                                      \
   }
-#define LOAD_VIDEO_FRAME_DATA(field)                                           \
-  {                                                                            \
-    size_t size[AV_NUM_DATA_POINTERS];                                         \
-    LOAD_SIZES(size, native);                                                  \
-    for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)                             \
-      if (native->field[i] && size[i])                                         \
-        NODE_API_CALL(napi_set_element(                                        \
-            env, object, i, ArrayBuffer(env, size[i], native->field[i])));     \
-  }
 
-static void frameFree(napi_env env, void *finalize_data, void *finalize_hint) {
+static void finalizeFrame(napi_env env, void *finalize_data,
+                          void *finalize_hint) {
   av_frame_free((AVFrame **)&finalize_data);
 }
 
@@ -33,64 +24,142 @@ WRAP(createAVChannelLayout, AVChannelLayout, NULL,
 
 static napi_value get_frameData(napi_env env, napi_callback_info cbinfo) {
   napi_value object;
+  napi_ref ref;
   NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &object, NULL));
   AVFrame *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
-  NODE_API_CALL(
-      napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
+    return UNDEFINED;
+  object = NULL;
+  ref = mapGet(native->data, sizeof(native->data));
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &object));
+    if (!object) {
+      mapDelete(native->data, sizeof(native->data));
+      ref = NULL;
+    }
+  }
+  if (!object)
+    NODE_API_CALL(
+        napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
   if (native->nb_samples > 0) {
     for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
-      if (native->data[i])
-        NODE_API_CALL(napi_set_element(
-            env, object, i,
-            ArrayBuffer(env, native->linesize[0], native->data[i])));
-  } else
-    LOAD_VIDEO_FRAME_DATA(data);
-  FREEZE(object);
+      NODE_API_CALL(napi_set_element(
+          env, object, i,
+          native->data[i]
+              ? Uint8Array(env, native->linesize[0], native->data[i])
+              : UNDEFINED));
+  } else {
+    size_t size[AV_NUM_DATA_POINTERS];
+    LOAD_SIZES(size, native);
+    for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
+      NODE_API_CALL(napi_set_element(
+          env, object, i,
+          native->data[i] && size[i] ? Uint8Array(env, size[i], native->data[i])
+                                     : UNDEFINED));
+  }
+  if (!ref) {
+    MapEntry *entry = mapAdd(native->data, sizeof(native->data), NULL);
+    if (!entry) {
+      napi_throw_error(env, NULL, "Failed to allocate map entry");
+      return NULL;
+    }
+    NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
+                                     NULL, &ref));
+    entry->value = ref;
+    FREEZE(object);
+  }
   return object;
 }
 
 static napi_value get_frameLinesize(napi_env env, napi_callback_info cbinfo) {
   napi_value object;
+  napi_ref ref;
   NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &object, NULL));
   AVFrame *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
-  NODE_API_CALL(
-      napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
+    return UNDEFINED;
+  object = NULL;
+  ref = mapGet(native->linesize, sizeof(native->linesize));
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &object));
+    if (!object) {
+      mapDelete(native->linesize, sizeof(native->linesize));
+      ref = NULL;
+    }
+  }
+  if (!object)
+    NODE_API_CALL(
+        napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
   for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
     NODE_API_CALL(
         napi_set_element(env, object, i, NUMBER(native->linesize[i])));
-  FREEZE(object);
+  if (!ref) {
+    MapEntry *entry = mapAdd(native->linesize, sizeof(native->linesize), NULL);
+    if (!entry) {
+      napi_throw_error(env, NULL, "Failed to allocate map entry");
+      return NULL;
+    }
+    NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
+                                     NULL, &ref));
+    entry->value = ref;
+    FREEZE(object);
+  }
   return object;
 }
 
 static napi_value get_frameExtendedData(napi_env env,
                                         napi_callback_info cbinfo) {
   napi_value object;
+  napi_ref ref;
   NODE_API_CALL(napi_get_cb_info(env, cbinfo, NULL, NULL, &object, NULL));
   AVFrame *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
-  NODE_API_CALL(
-      napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
+    return UNDEFINED;
+  object = NULL;
+  ref = mapGet(native->extended_data, sizeof(native->extended_data));
+  if (ref) {
+    NODE_API_CALL(napi_get_reference_value(env, ref, &object));
+    if (!object) {
+      mapDelete(native->extended_data, sizeof(native->extended_data));
+      ref = NULL;
+    }
+  }
+  if (!object)
+    NODE_API_CALL(
+        napi_create_array_with_length(env, AV_NUM_DATA_POINTERS, &object));
   if (native->nb_samples > 0)
     for (int i = 0;
          i < native->ch_layout.nb_channels && native->extended_data[i]; i++)
       NODE_API_CALL(napi_set_element(
           env, object, i,
-          ArrayBuffer(env, native->linesize[0], native->extended_data[i])));
-  else
-    LOAD_VIDEO_FRAME_DATA(extended_data);
-  FREEZE(object);
+          Uint8Array(env, native->linesize[0], native->extended_data[i])));
+  else {
+    size_t size[AV_NUM_DATA_POINTERS];
+    LOAD_SIZES(size, native);
+    for (int i = 0;
+         i < AV_NUM_DATA_POINTERS && native->extended_data[i] && size[i]; i++)
+      NODE_API_CALL(napi_set_element(
+          env, object, i, Uint8Array(env, size[i], native->extended_data[i])));
+  }
+  if (!ref) {
+    MapEntry *entry =
+        mapAdd(native->extended_data, sizeof(native->extended_data), NULL);
+    if (!entry) {
+      napi_throw_error(env, NULL, "Failed to allocate map entry");
+      return NULL;
+    }
+    NODE_API_CALL(napi_add_finalizer(env, object, &entry->key, mapFinalizeCb,
+                                     NULL, &ref));
+    entry->value = ref;
+    FREEZE(object);
+  }
   return object;
 }
 
-WRAP(createAVFrame, AVFrame, frameFree, PROP_GET(data, data, frameData),
+WRAP(createAVFrame, AVFrame, finalizeFrame, PROP_GET(data, data, frameData),
      PROP_GET(linesize, linesize, frameLinesize),
      PROP_GET(extendedData, extended_data, frameExtendedData),
      PROP_GETSET(width, width, int), PROP_GETSET(height, height, int),

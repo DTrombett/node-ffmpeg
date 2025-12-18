@@ -1,12 +1,10 @@
 #ifndef PACKET_H
 #define PACKET_H
-#include "../avutil/rational.h"
 #include "../utils.h"
-#include <libavcodec/defs.h>
 #include <libavcodec/packet.h>
-#include <node_api.h>
 
-static void packetFree(napi_env env, void *finalize_data, void *finalize_hint) {
+static void finalizePacket(napi_env env, void *finalize_data,
+                           void *finalize_hint) {
   av_packet_free((AVPacket **)&finalize_data);
 }
 static napi_value get_data(napi_env env, napi_callback_info cbinfo) {
@@ -15,13 +13,11 @@ static napi_value get_data(napi_env env, napi_callback_info cbinfo) {
   AVPacket *native = unwrap(env, object);
 
   if (!native)
-    return NULL;
-  NODE_API_CALL(napi_create_external_arraybuffer(
-      env, native->data, native->size, NULL, NULL, &object));
-  return object;
+    return UNDEFINED;
+  return Uint8Array(env, native->size, native->data);
 }
 
-WRAP(createAVPacket, AVPacket, packetFree, PROP_CONST(buf, NULL),
+WRAP(createAVPacket, AVPacket, finalizePacket, PROP_CONST(buf, NULL),
      PROP_GETSET(pts, pts, int64_t), PROP_GETSET(dts, dts, int64_t),
      PROP_GET(data, data, data), PROP_GETSET(size, size, int),
      PROP_GETSET(streamIndex, stream_index, int),

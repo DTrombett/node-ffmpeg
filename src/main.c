@@ -3,10 +3,14 @@
 #include "avcodec/codec.h"
 #include "avcodec/frame.h"
 #include "avcodec/packet.h"
+#include "avutil/rational.h"
 #include "utils.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/opt.h>
 #include <node_api.h>
+
+#define EXPORT_FN(fn) NODE_SET_PROPERTY(exports, #fn, FUNCTION(fn));
 
 static void finalize_cb(napi_env env, void *finalize_data,
                         void *finalize_hint) {
@@ -25,9 +29,9 @@ static napi_value findEncoderByName(napi_env env, napi_callback_info cbinfo) {
 }
 static napi_value allocContext3(napi_env env, napi_callback_info cbinfo) {
   NODE_LOAD_ARGUMENTS(1, cbinfo);
+  const AVCodec *codec = unwrap(env, arguments[0]);
 
-  return createAVCodecContext(
-      env, avcodec_alloc_context3(unwrap(env, arguments[0])));
+  return createAVCodecContext(env, avcodec_alloc_context3(codec));
 }
 static napi_value packetAlloc(napi_env env, napi_callback_info cbinfo) {
   return createAVPacket(env, av_packet_alloc());
@@ -67,17 +71,72 @@ static napi_value open2(napi_env env, napi_callback_info cbinfo) {
 static napi_value frameAlloc(napi_env env, napi_callback_info cbinfo) {
   return createAVFrame(env, av_frame_alloc());
 }
+static napi_value frameGetBuffer(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(2, cbinfo);
+  return NUMBER(av_frame_get_buffer(parseExternal(env, arguments[0]),
+                                    parseInt(env, arguments[1], true, 0)));
+}
+static napi_value frameMakeWritable(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  return NUMBER(av_frame_make_writable(parseExternal(env, arguments[0])));
+}
+static napi_value sendFrame(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(2, cbinfo);
+  return NUMBER(avcodec_send_frame(parseExternal(env, arguments[0]),
+                                   parseExternal(env, arguments[1])));
+}
+static napi_value receivePacket(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(2, cbinfo);
+  return NUMBER(avcodec_receive_packet(parseExternal(env, arguments[0]),
+                                       parseExternal(env, arguments[1])));
+}
+static napi_value packetUnref(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  av_packet_unref(parseExternal(env, arguments[0]));
+  return UNDEFINED;
+}
+static napi_value err2str(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  return STRING(av_err2str(parseInt(env, arguments[0], true, 0)));
+}
+static napi_value freeContext(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  AVCodecContext *ctx = parseExternal(env, arguments[0]);
+  avcodec_free_context(&ctx);
+  return UNDEFINED;
+}
+static napi_value frameFree(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  AVFrame *frame = parseExternal(env, arguments[0]);
+  av_frame_free(&frame);
+  return UNDEFINED;
+}
+static napi_value packetFree(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  AVPacket *pkt = parseExternal(env, arguments[0]);
+  av_packet_free(&pkt);
+  return UNDEFINED;
+}
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
-  NODE_SET_PROPERTY(exports, "versionInfo", FUNCTION(versionInfo));
-  NODE_SET_PROPERTY(exports, "findEncoderByName", FUNCTION(findEncoderByName));
-  NODE_SET_PROPERTY(exports, "allocContext3", FUNCTION(allocContext3));
-  NODE_SET_PROPERTY(exports, "packetAlloc", FUNCTION(packetAlloc));
-  NODE_SET_PROPERTY(exports, "optSet", FUNCTION(optSet));
-  NODE_SET_PROPERTY(exports, "optSetInt", FUNCTION(optSetInt));
-  NODE_SET_PROPERTY(exports, "optSetDouble", FUNCTION(optSetDouble));
-  NODE_SET_PROPERTY(exports, "optSetQ", FUNCTION(optSetQ));
-  NODE_SET_PROPERTY(exports, "open2", FUNCTION(open2));
-  NODE_SET_PROPERTY(exports, "frameAlloc", FUNCTION(frameAlloc));
+  EXPORT_FN(versionInfo);
+  EXPORT_FN(findEncoderByName);
+  EXPORT_FN(allocContext3);
+  EXPORT_FN(packetAlloc);
+  EXPORT_FN(optSet);
+  EXPORT_FN(optSetInt);
+  EXPORT_FN(optSetDouble);
+  EXPORT_FN(optSetQ);
+  EXPORT_FN(open2);
+  EXPORT_FN(frameAlloc);
+  EXPORT_FN(frameGetBuffer);
+  EXPORT_FN(frameMakeWritable);
+  EXPORT_FN(sendFrame);
+  EXPORT_FN(receivePacket);
+  EXPORT_FN(packetUnref);
+  EXPORT_FN(err2str);
+  EXPORT_FN(freeContext);
+  EXPORT_FN(frameFree);
+  EXPORT_FN(packetFree);
   return exports;
 }
