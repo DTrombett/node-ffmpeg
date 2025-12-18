@@ -32,7 +32,7 @@ inline napi_ref mapGet(void *ptr, size_t size) {
   MapEntry search;
   MapEntry *entry = NULL;
 
-  memset(&search, 0, sizeof(MapKey));
+  memset(&search, 0, sizeof(MapEntry));
   search.key.ptr = ptr;
   search.key.size = size;
   HASH_FIND_PTRSIZE(refMap, &search.key, entry);
