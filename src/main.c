@@ -10,12 +10,8 @@
 #include <libavutil/opt.h>
 #include <node_api.h>
 
-#define EXPORT_FN(fn) NODE_SET_PROPERTY(exports, #fn, FUNCTION(fn));
+#define EXPORT_FN(fn, orig) NODE_SET_PROPERTY(exports, #orig, FUNCTION(fn));
 
-static void finalize_cb(napi_env env, void *finalize_data,
-                        void *finalize_hint) {
-  free(finalize_data);
-}
 static napi_value versionInfo(napi_env env, napi_callback_info cbinfo) {
   return STRING(av_version_info());
 }
@@ -119,24 +115,24 @@ static napi_value packetFree(napi_env env, napi_callback_info cbinfo) {
 }
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
-  EXPORT_FN(versionInfo);
-  EXPORT_FN(findEncoderByName);
-  EXPORT_FN(allocContext3);
-  EXPORT_FN(packetAlloc);
-  EXPORT_FN(optSet);
-  EXPORT_FN(optSetInt);
-  EXPORT_FN(optSetDouble);
-  EXPORT_FN(optSetQ);
-  EXPORT_FN(open2);
-  EXPORT_FN(frameAlloc);
-  EXPORT_FN(frameGetBuffer);
-  EXPORT_FN(frameMakeWritable);
-  EXPORT_FN(sendFrame);
-  EXPORT_FN(receivePacket);
-  EXPORT_FN(packetUnref);
-  EXPORT_FN(err2str);
-  EXPORT_FN(freeContext);
-  EXPORT_FN(frameFree);
-  EXPORT_FN(packetFree);
+  EXPORT_FN(versionInfo, av_version_info);
+  EXPORT_FN(findEncoderByName, avcodec_find_encoder_by_name);
+  EXPORT_FN(allocContext3, avcodec_alloc_context3);
+  EXPORT_FN(packetAlloc, av_packet_alloc);
+  EXPORT_FN(optSet, av_opt_set);
+  EXPORT_FN(optSetInt, av_opt_set_int);
+  EXPORT_FN(optSetDouble, av_opt_set_double);
+  EXPORT_FN(optSetQ, av_opt_set_q);
+  EXPORT_FN(open2, avcodec_open2);
+  EXPORT_FN(frameAlloc, av_frame_alloc);
+  EXPORT_FN(frameGetBuffer, av_frame_get_buffer);
+  EXPORT_FN(frameMakeWritable, av_frame_make_writable);
+  EXPORT_FN(sendFrame, avcodec_send_frame);
+  EXPORT_FN(receivePacket, avcodec_receive_packet);
+  EXPORT_FN(packetUnref, av_packet_unref);
+  EXPORT_FN(err2str, av_err2str);
+  EXPORT_FN(freeContext, avcodec_free_context);
+  EXPORT_FN(frameFree, av_frame_free);
+  EXPORT_FN(packetFree, av_packet_free);
   return exports;
 }
