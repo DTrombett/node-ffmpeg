@@ -13,11 +13,14 @@
         const char *message =                                                  \
             err_message ? err_message : "empty error message";                 \
         int len = snprintf(NULL, 0, "%s\n    at %s (%s:%d)", message,          \
-                           __func__, __FILE__, __LINE__);                      \
-        char *buf = malloc(len + 1);                                           \
-        snprintf(buf, len + 1, "%s\n    at %s (%s:%d)", message, __func__,     \
-                 __FILE__, __LINE__);                                          \
-        message = buf;                                                         \
+                           __func__, __FILE__, __LINE__) +                     \
+                  1;                                                           \
+        char *buf = malloc(len);                                               \
+        if (buf) {                                                             \
+          snprintf(buf, len, "%s\n    at %s (%s:%d)", message, __func__,       \
+                   __FILE__, __LINE__);                                        \
+          message = buf;                                                       \
+        }                                                                      \
         napi_throw_error(env, NULL, message);                                  \
         free(buf);                                                             \
       }                                                                        \
@@ -195,6 +198,8 @@ static inline char *parseString(napi_env env, napi_value value) {
   if (!length)
     return NULL;
   char *name = malloc(length + 1);
+  if (!name)
+    return NULL;
   NODE_API_CALL_DEFAULT(
       napi_get_value_string_utf8(env, value, name, length + 1, NULL), NULL);
   return name;
