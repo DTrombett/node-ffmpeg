@@ -1,6 +1,5 @@
 #ifndef UTILS_H
 #define UTILS_H
-#include <stddef.h>
 #define NODE_API_CALL_DEFAULT(call, def)                                       \
   do {                                                                         \
     napi_status status = (call);                                               \
@@ -113,7 +112,6 @@
 #define UNDEFINED undefined(env)
 
 #include "map.h"
-#include <node_api.h>
 #include <stdio.h>
 #include <stdlib.h>
 

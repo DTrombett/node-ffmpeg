@@ -2,7 +2,6 @@
 #define RATIONAL_H
 #include "../utils.h"
 #include <libavutil/rational.h>
-#include <node_api.h>
 
 WRAP(createAVRational, AVRational, NULL, PROP_GETSET(num, num, int),
      PROP_GETSET(den, den, int))

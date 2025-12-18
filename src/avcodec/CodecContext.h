@@ -1,18 +1,15 @@
 #ifndef CODEC_CONTEXT_H
 #define CODEC_CONTEXT_H
-#include "../avutil/rational.h"
 #include "../utils.h"
 #include "codec.h"
 #include <libavcodec/avcodec.h>
-#include <libavutil/opt.h>
-#include <node_api.h>
 
-static void freeContext(napi_env env, void *finalize_data,
-                        void *finalize_hint) {
+static void finalizeContext(napi_env env, void *finalize_data,
+                            void *finalize_hint) {
   avcodec_free_context((AVCodecContext **)&finalize_data);
 }
 
-WRAP(createAVCodecContext, AVCodecContext, freeContext,
+WRAP(createAVCodecContext, AVCodecContext, finalizeContext,
      PROP_CONST(codecType, NUMBER(native->codec_type)),
      PROP_CONST(codec, createAVCodec(env, native->codec)),
      PROP_CONST(codecId, NUMBER(native->codec_id)),

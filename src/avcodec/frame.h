@@ -3,7 +3,6 @@
 #include "../utils.h"
 #include <libavutil/frame.h>
 #include <libavutil/imgutils.h>
-#include <node_api.h>
 
 #define LOAD_SIZES(size, native)                                               \
   {                                                                            \
@@ -14,7 +13,8 @@
                               linesizes);                                      \
   }
 
-static void frameFree(napi_env env, void *finalize_data, void *finalize_hint) {
+static void finalizeFrame(napi_env env, void *finalize_data,
+                          void *finalize_hint) {
   av_frame_free((AVFrame **)&finalize_data);
 }
 
@@ -148,7 +148,7 @@ static napi_value get_frameExtendedData(napi_env env,
   return object;
 }
 
-WRAP(createAVFrame, AVFrame, frameFree, PROP_GET(data, data, frameData),
+WRAP(createAVFrame, AVFrame, finalizeFrame, PROP_GET(data, data, frameData),
      PROP_GET(linesize, linesize, frameLinesize),
      PROP_GET(extendedData, extended_data, frameExtendedData),
      PROP_GETSET(width, width, int), PROP_GETSET(height, height, int),

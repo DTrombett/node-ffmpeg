@@ -3,9 +3,11 @@
 #include "avcodec/codec.h"
 #include "avcodec/frame.h"
 #include "avcodec/packet.h"
+#include "avutil/rational.h"
 #include "utils.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/opt.h>
 #include <node_api.h>
 
 #define EXPORT_FN(fn) NODE_SET_PROPERTY(exports, #fn, FUNCTION(fn));
@@ -91,7 +93,29 @@ static napi_value receivePacket(napi_env env, napi_callback_info cbinfo) {
 static napi_value packetUnref(napi_env env, napi_callback_info cbinfo) {
   NODE_LOAD_ARGUMENTS(1, cbinfo);
   av_packet_unref(parseExternal(env, arguments[0]));
-  return undefined(env);
+  return UNDEFINED;
+}
+static napi_value err2str(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  return STRING(av_err2str(parseInt(env, arguments[0], true, 0)));
+}
+static napi_value freeContext(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  AVCodecContext *ctx = parseExternal(env, arguments[0]);
+  avcodec_free_context(&ctx);
+  return UNDEFINED;
+}
+static napi_value frameFree(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  AVFrame *frame = parseExternal(env, arguments[0]);
+  av_frame_free(&frame);
+  return UNDEFINED;
+}
+static napi_value packetFree(napi_env env, napi_callback_info cbinfo) {
+  NODE_LOAD_ARGUMENTS(1, cbinfo);
+  AVPacket *pkt = parseExternal(env, arguments[0]);
+  av_packet_free(&pkt);
+  return UNDEFINED;
 }
 
 NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
@@ -110,5 +134,9 @@ NAPI_MODULE_INIT(/* napi_env env, napi_value exports */) {
   EXPORT_FN(sendFrame);
   EXPORT_FN(receivePacket);
   EXPORT_FN(packetUnref);
+  EXPORT_FN(err2str);
+  EXPORT_FN(freeContext);
+  EXPORT_FN(frameFree);
+  EXPORT_FN(packetFree);
   return exports;
 }

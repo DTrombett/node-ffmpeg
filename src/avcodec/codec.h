@@ -3,7 +3,6 @@
 #include "../utils.h"
 #include <libavcodec/codec.h>
 #include <libavcodec/defs.h>
-#include <node_api.h>
 
 WRAP(createAVProfile, const AVProfile, NULL,
      PROP_CONST(profile, NUMBER(native->profile)),

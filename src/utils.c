@@ -1,6 +1,5 @@
 #include "utils.h"
 #include "avutil/rational.h"
-#include <node_api.h>
 
 napi_value get_int(napi_env env, napi_callback_info cbinfo) {
   LOAD_GET(cbinfo, int)
