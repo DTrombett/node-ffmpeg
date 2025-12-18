@@ -86,7 +86,7 @@ const encode = async (
 		frame.pts = i;
 		await encode(context, frame, packet, file);
 	}
-	encode(context, undefined, packet, file);
+	await encode(context, undefined, packet, file);
 	file.end();
 	console.timeEnd("encode time");
 })();
