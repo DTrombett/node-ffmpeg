@@ -74,5 +74,5 @@ napi_value set_AVRational(napi_env env, napi_callback_info cbinfo) {
 }
 napi_value get_External(napi_env env, napi_callback_info cbinfo) {
   LOAD_GET(cbinfo, void *)
-  return External(env, data, NULL, NULL);
+  return External(env, *data, NULL, NULL);
 }
