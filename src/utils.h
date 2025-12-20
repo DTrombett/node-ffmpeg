@@ -135,6 +135,20 @@ static inline napi_valuetype nodeTypeof(napi_env env, napi_value value) {
   NODE_API_CALL_DEFAULT(napi_typeof(env, value, &result), napi_undefined);
   return result;
 };
+static inline bool isArray(napi_env env, napi_value value) {
+  bool result;
+
+  NODE_API_CALL_DEFAULT(napi_is_array(env, value, &result), 0);
+  return result;
+};
+static inline bool isTypedArray(napi_env env, napi_value value) {
+  if (nodeTypeof(env, value) != napi_object)
+    return false;
+  bool result;
+
+  NODE_API_CALL_DEFAULT(napi_is_typedarray(env, value, &result), 0);
+  return result;
+};
 static inline napi_value String(napi_env env, const char *str) {
   if (!str)
     return UNDEFINED;

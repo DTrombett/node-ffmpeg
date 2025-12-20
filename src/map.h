@@ -31,7 +31,7 @@ inline MapEntry *mapAdd(void *ptr, size_t size, napi_ref value) {
 }
 
 inline napi_ref mapGet(void *ptr, size_t size) {
-  MapEntry search;
+  MapEntry search = {};
   MapEntry *entry = NULL;
 
   memset(&search, 0, sizeof(MapEntry));
@@ -42,10 +42,13 @@ inline napi_ref mapGet(void *ptr, size_t size) {
 }
 
 inline napi_ref mapDelete(void *ptr, size_t size) {
-  const MapKey key = (MapKey){ptr, size};
+  MapEntry search = {};
   MapEntry *entry = NULL;
 
-  HASH_FIND_PTRSIZE(refMap, &key, entry);
+  memset(&search, 0, sizeof(MapEntry));
+  search.key.ptr = ptr;
+  search.key.size = size;
+  HASH_FIND_PTRSIZE(refMap, &search.key, entry);
   if (entry) {
     napi_ref ref = entry->value;
 

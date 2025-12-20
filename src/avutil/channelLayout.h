@@ -24,17 +24,17 @@ static napi_value get_channelLayoutMap(napi_env env,
 }
 static napi_value set_channelLayoutMap(napi_env env,
                                        napi_callback_info cbinfo) {
-  LOAD_SET(cbinfo, AVChannelCustom);
+  LOAD_SET(cbinfo, AVChannelCustom *);
   LOOP_ARRAY(argv[0]) {
     napi_value object, value;
 
     NODE_API_CALL(napi_get_element(env, argv[0], i, &object));
     NODE_API_CALL(napi_get_named_property(env, object, "id", &value));
-    data[i].id = parseInt(env, value, true, 0);
+    (*data)[i].id = parseInt(env, value, true, 0);
     NODE_API_CALL(napi_get_named_property(env, object, "name", &value));
     if (nodeTypeof(env, value) == napi_string)
-      NODE_API_CALL(napi_get_value_string_utf8(env, value, data[i].name,
-                                               sizeof(data[i].name), NULL));
+      NODE_API_CALL(napi_get_value_string_utf8(env, value, (*data)[i].name,
+                                               sizeof((*data)[i].name), NULL));
   }
   return UNDEFINED;
 }
