@@ -46,6 +46,7 @@
 #define BIGINTWORDS(value) BigIntWords(env, (value))
 #define FUNCTION(name) Function(env, #name, (name))
 #define FREEZE(object) NODE_API_CALL(napi_object_freeze(env, (object)))
+#define SEAL(object) NODE_API_CALL(napi_object_seal(env, (object)))
 #define Array(...)                                                             \
   _GET_MACRO2(__VA_ARGS__, createArrayWithLength, createArray)(__VA_ARGS__)
 #define EXTERNAL(data) External(env, (data), NULL, NULL)
@@ -92,7 +93,7 @@
     NODE_API_CALL(napi_wrap(env, object, &entry->key, mapFinalizeCb,           \
                             finalize_cb, &ref));                               \
     entry->value = ref;                                                        \
-    FREEZE(object);                                                            \
+    SEAL(object);                                                              \
     return object;                                                             \
   }
 #define LOAD_SET(cbinfo, type)                                                 \
@@ -115,6 +116,10 @@
   free(name);
 #define UNDEFINED undefined(env)
 #define EXPORT_FN(fn, orig) NODE_SET_PROPERTY(exports, #orig, FUNCTION(fn));
+#define LOOP_ARRAY(array)                                                      \
+  uint32_t length;                                                             \
+  NODE_API_CALL(napi_get_array_length(env, array, &length));                   \
+  for (uint32_t i = 0; i < length; i++)
 
 #include "map.h"
 
